@@ -111,21 +111,15 @@ if df.empty:
 
 # Key Metrics
 st.markdown("### Top-Level Metrics")
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 
 total_drugs = len(df)
-top_company = df['Company'].mode()[0] if 'Company' in df.columns else "N/A"
-top_therapeutic = df['Therapeutic Category'].mode()[0] if 'Therapeutic Category' in df.columns else "N/A"
 years = df['Approval Year'].dropna().astype(int)
 latest_year = years.max() if not years.empty else "N/A"
 
 with col1:
     st.metric(label="Total Confirmed ASDs", value=total_drugs)
 with col2:
-    st.metric(label="Most Researched Area", value=top_therapeutic[:20] + '..' if len(top_therapeutic) > 20 else top_therapeutic)
-with col3:
-    st.metric(label="Top Company", value=top_company[:20] + '..' if len(top_company) > 20 else top_company)
-with col4:
     st.metric(label="Latest Approval", value=latest_year)
 
 st.divider()
@@ -253,4 +247,6 @@ st.info(f"""
 """)
 
 st.markdown("---")
+st.markdown("### 🙏 Acknowledgements")
+st.info("Thank you my wife Xiuli Li for the support. Thank my friend Tianyi Li, Yongjian Wang, Fan Meng, and Zoe Wen for brainstorming. Thank my manager Fady Ibrahim for the encouragement. Thank my PhD advisor Kevin J. Edgar, my postdoc advisor Lynne Taylor, and my mentor Tze Ning Hiew for me to start work on amorphous solid dispersion.")
 st.markdown("<div style='text-align: center'>Built with Streamlit & Gemini 3.1 Pro </div>", unsafe_allow_html=True)
