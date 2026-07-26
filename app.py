@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # ============================================================
-# Page & theme
+# Page & style
 # ============================================================
 st.set_page_config(
     page_title="EMA Approved ASD Drugs",
@@ -22,6 +22,49 @@ st.set_page_config(
 )
 
 DATA_LAST_UPDATED = "2026-07-25"
+ACCENT = "#0E7C7B"
+ACCENT2 = "#E76F51"
+
+st.markdown("""
+<style>
+/* ---------- header band ---------- */
+.header-band {
+    background: linear-gradient(100deg, #0B5E5D 0%, #0E7C7B 55%, #16A3A1 100%);
+    border-radius: 14px;
+    padding: 30px 36px 26px 36px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(14, 124, 123, .25);
+}
+.header-band h1 { color: #FFFFFF; margin: 0; font-size: 2.1rem; font-weight: 800; letter-spacing: .3px; }
+.header-band p  { color: #C9EAE9; margin: 8px 0 0 0; font-size: .95rem; }
+.header-band .badge {
+    display: inline-block; background: rgba(255,255,255,.16); color: #EAF7F6;
+    border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 3px 12px; font-size: .78rem; margin-top: 12px; margin-right: 8px;
+}
+
+/* ---------- KPI cards ---------- */
+.kpi-card {
+    background: #FFFFFF; border: 1px solid #E1ECEC; border-radius: 14px;
+    padding: 16px 20px 14px 20px; box-shadow: 0 2px 6px rgba(14, 124, 123, .07);
+    border-top: 4px solid #0E7C7B; height: 118px;
+}
+.kpi-card.orange { border-top-color: #E76F51; }
+.kpi-label { font-size: .82rem; color: #5B7282; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.kpi-value { font-size: 2.1rem; font-weight: 800; color: #0E7C7B; line-height: 1.15; }
+.kpi-card.orange .kpi-value { color: #E76F51; }
+.kpi-sub   { font-size: .76rem; color: #8AA3AD; margin-top: 2px; }
+
+/* ---------- section titles ---------- */
+.sec-title {
+    color: #0B5E5D; font-weight: 700; font-size: 1.15rem;
+    border-left: 5px solid #0E7C7B; padding-left: 10px; margin: 6px 0 12px 0;
+}
+
+/* ---------- tighten default padding ---------- */
+.block-container { padding-top: 2rem; }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # Data loading & cleaning
@@ -119,32 +162,50 @@ if df.empty:
 df_asd = df[df['Drug Solid Form'].astype(str).str.upper() == 'ASD'].copy()
 
 PLOTLY_TEMPLATE = 'plotly_white'
-ACCENT = '#0E7C7B'
 
 # ============================================================
-# Header & KPIs
+# Header band & KPI cards
 # ============================================================
-st.title("💊 EMA-Approved Oral ASD Drugs")
-st.caption(
-    f"Amorphous Solid Dispersion (ASD) drugs approved by the European Medicines Agency, "
-    f"extracted from EPAR Quality Aspects via LLM · Data updated {DATA_LAST_UPDATED}"
-)
+st.markdown(f"""
+<div class="header-band">
+  <h1>💊 EMA-Approved Oral ASD Drugs</h1>
+  <p>Amorphous Solid Dispersion (ASD) drugs approved by the European Medicines Agency,
+     extracted from EPAR <i>Quality aspects</i> sections with an LLM pipeline.</p>
+  <span class="badge">Data updated {DATA_LAST_UPDATED}</span>
+  <span class="badge">{len(df)} drugs analyzed</span>
+  <span class="badge">{len(df_asd)} confirmed ASD</span>
+</div>
+""", unsafe_allow_html=True)
 
 asd_years = df_asd['Approval Year'].dropna()
 top_polymer = (pd.Series([p for l in df_asd['Polymer List'] for p in l])
                .value_counts().idxmax() if df_asd['Polymer List'].map(len).sum() else 'N/A')
 method_counts_all = df_asd.loc[df_asd['ASD Method Clean'] != 'N/A', 'ASD Method Clean'].value_counts()
 top_method = method_counts_all.idxmax() if len(method_counts_all) else 'N/A'
-asd_2026 = int((df_asd['Approval Year'] == 2026).sum())
+df_asd_2026 = df_asd[df_asd['Approval Year'] == 2026]
+new26_names = ' · '.join(df_asd_2026['Drug Name']) if len(df_asd_2026) else ''
+
+
+def kpi_card(col, label, value, sub='', orange=False):
+    with col:
+        st.markdown(f"""
+        <div class="kpi-card{' orange' if orange else ''}">
+          <div class="kpi-label">{label}</div>
+          <div class="kpi-value">{value}</div>
+          <div class="kpi-sub">{sub}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("Confirmed ASD Drugs", len(df_asd))
-k2.metric("Drugs Analyzed", len(df))
-k3.metric("New ASD in 2026", asd_2026)
-k4.metric("Top Polymer", top_polymer)
-k5.metric("Top ASD Method", top_method)
+kpi_card(k1, "Confirmed ASD Drugs", len(df_asd), f"of {len(df)} oral drugs analyzed")
+kpi_card(k2, "Latest ASD Approvals", int(asd_years.max()) if not asd_years.empty else 'N/A',
+         new26_names, orange=True)
+kpi_card(k3, "New ASD in 2026", len(df_asd_2026), new26_names)
+kpi_card(k4, "Top Polymer", top_polymer, "most used ASD carrier")
+kpi_card(k5, "Top ASD Method", top_method, "most used technology")
 
-st.divider()
+st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📈 Overview", "🔍 Drug Database", "🧪 Formulation Insights", "ℹ️ About"])
 
@@ -161,7 +222,7 @@ with tab1:
             fig.add_bar(x=yr.index, y=yr.values, name='Per year',
                         marker_color=ACCENT, text=yr.values, textposition='outside')
             fig.add_scatter(x=yr.index, y=yr.cumsum(), name='Cumulative',
-                            yaxis='y2', mode='lines+markers', line=dict(color='#E76F51'))
+                            yaxis='y2', mode='lines+markers', line=dict(color=ACCENT2, width=3))
             fig.update_layout(
                 title="ASD Approvals per Year (cumulative overlay)",
                 template=PLOTLY_TEMPLATE, height=380,
@@ -220,7 +281,7 @@ with tab1:
 # Tab 2 — Drug Database
 # ============================================================
 with tab2:
-    st.markdown("#### Search & Filter")
+    st.markdown('<div class="sec-title">Search & Filter</div>', unsafe_allow_html=True)
 
     f1, f2, f3 = st.columns([2, 2, 2])
     with f1:
@@ -276,7 +337,7 @@ with tab2:
         mime="text/csv",
     )
 
-    st.markdown("#### Drug Detail")
+    st.markdown('<div class="sec-title">Drug Detail</div>', unsafe_allow_html=True)
     if len(filtered):
         pick = st.selectbox("Select a drug", sorted(filtered['Drug Name'].unique()))
         if pick:
@@ -313,7 +374,8 @@ with tab2:
 # Tab 3 — Formulation Insights
 # ============================================================
 with tab3:
-    st.markdown("#### Excipient Functional Roles in ASD Formulations")
+    st.markdown('<div class="sec-title">Excipient Functional Roles in ASD Formulations</div>',
+                unsafe_allow_html=True)
 
     cat_totals = {}
     exc_counter = {}
@@ -340,13 +402,14 @@ with tab3:
                                    columns=['Excipient', 'Drugs'])
             fig6 = px.bar(top_exc, x='Drugs', y='Excipient', orientation='h',
                           title="Top 15 Individual Excipients",
-                          color_discrete_sequence=['#E76F51'])
+                          color_discrete_sequence=[ACCENT2])
             fig6.update_layout(template=PLOTLY_TEMPLATE, height=400,
                                yaxis={'categoryorder': 'total ascending'})
             st.plotly_chart(fig6, width='stretch')
 
     # Superdisintegrant choice by ASD method
-    st.markdown("#### Superdisintegrant Choice by ASD Method")
+    st.markdown('<div class="sec-title">Superdisintegrant Choice by ASD Method</div>',
+                unsafe_allow_html=True)
     rows = []
     for _, r in df_asd.iterrows():
         m = r['ASD Method Clean']
@@ -362,11 +425,11 @@ with tab3:
         sd = sd[sd['Used']].groupby(['Method', 'Disintegrant']).size().reset_index(name='Drugs')
         fig7 = px.bar(sd, x='Method', y='Drugs', color='Disintegrant', barmode='group',
                       title="Croscarmellose vs Crospovidone Usage by ASD Method",
-                      color_discrete_sequence=[ACCENT, '#E76F51'])
+                      color_discrete_sequence=[ACCENT, ACCENT2])
         fig7.update_layout(template=PLOTLY_TEMPLATE, height=380)
         st.plotly_chart(fig7, width='stretch')
 
-    st.markdown("#### 💡 Insights from the Data")
+    st.markdown('<div class="sec-title">💡 Insights from the Data</div>', unsafe_allow_html=True)
     total_asd = len(df_asd)
     ccs_n = df_asd['Excipients'].str.contains('croscarmellose', case=False, na=False).sum()
     csp_n = df_asd['Excipients'].str.contains('crospovidone', case=False, na=False).sum()
@@ -380,8 +443,8 @@ with tab3:
                 f"Crospovidone (**{csp_n}** drugs). Its extreme swelling and fibrous structure tear apart "
                 f"dense, glassy polymeric matrices from spray drying or HME.")
     with fcol2:
-        st.info(f"**HPMCAS & Copovidone dominate** the ASD polymer space, repeatedly stabilizing "
-                f"these difficult, poorly soluble APIs.")
+        st.info("**HPMCAS & Copovidone dominate** the ASD polymer space, repeatedly stabilizing "
+                "these difficult, poorly soluble APIs.")
         st.info("**Oncology is the biggest benefactor.** Over half of these insoluble ASD APIs are "
                 "targeted cancer therapies (mostly kinase inhibitors). Salt-based dissolution modulators "
                 "(e.g., NaCl in Zepatier, Aquipta, Tukysa) appear as a niche but clever trick.")
@@ -390,7 +453,7 @@ with tab3:
 # Tab 4 — About
 # ============================================================
 with tab4:
-    st.markdown("#### How this dataset was built")
+    st.markdown('<div class="sec-title">How this dataset was built</div>', unsafe_allow_html=True)
     st.markdown(f"""
 1. **Source**: EMA centrally authorised medicines report — all innovative human medicines approved since 2010
    (generics and biosimilars excluded).
@@ -402,7 +465,7 @@ with tab4:
 5. **Last update**: {DATA_LAST_UPDATED} — covers EMA approvals through July 2026.
 """)
 
-    st.markdown("#### Caveats")
+    st.markdown('<div class="sec-title">Caveats</div>', unsafe_allow_html=True)
     st.markdown("""
 - Fields are **AI-extracted** from public assessment reports; always confirm critical values against the
   original EPAR before citing.
@@ -410,12 +473,12 @@ with tab4:
 - Non-oral products flagged during review are kept in the database with `Oral Administration = No`.
 """)
 
-    st.markdown("#### 🙏 Acknowledgements")
+    st.markdown('<div class="sec-title">🙏 Acknowledgements</div>', unsafe_allow_html=True)
     st.info("Thank you my wife Xiuli Li for the support. Thank my friend Tianyi Li, Yongjian Wang, Fan Meng, "
             "and Zoe Wen for brainstorming. Thank my manager Fady Ibrahim for the encouragement. Thank my PhD "
             "advisor Kevin J. Edgar, my postdoc advisor Lynne Taylor, and my mentor Tze Ning Hiew for me to "
             "start work on amorphous solid dispersion.")
 
     st.markdown("---")
-    st.markdown("<div style='text-align: center'>Built with Streamlit & Gemini · Data: EMA EPAR</div>",
+    st.markdown("<div style='text-align: center; color: #8AA3AD'>Built with Streamlit & Gemini · Data: EMA EPAR</div>",
                 unsafe_allow_html=True)
