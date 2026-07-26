@@ -22,43 +22,44 @@ st.set_page_config(
 )
 
 DATA_LAST_UPDATED = "2026-07-25"
-ACCENT = "#0E7C7B"
-ACCENT2 = "#E76F51"
+ACCENT = "#1D5FA8"    # primary pharma blue
+ACCENT2 = "#D97706"   # amber highlight
+BLUE_DARK = "#0F3D6E"
 
 st.markdown("""
 <style>
 /* ---------- header band ---------- */
 .header-band {
-    background: linear-gradient(100deg, #0B5E5D 0%, #0E7C7B 55%, #16A3A1 100%);
+    background: linear-gradient(100deg, #0F3D6E 0%, #1D5FA8 60%, #3B83C4 100%);
     border-radius: 14px;
     padding: 30px 36px 26px 36px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(14, 124, 123, .25);
+    box-shadow: 0 4px 14px rgba(29, 95, 168, .22);
 }
 .header-band h1 { color: #FFFFFF; margin: 0; font-size: 2.1rem; font-weight: 800; letter-spacing: .3px; }
-.header-band p  { color: #C9EAE9; margin: 8px 0 0 0; font-size: .95rem; }
+.header-band p  { color: #D3E4F5; margin: 8px 0 0 0; font-size: .95rem; }
 .header-band .badge {
-    display: inline-block; background: rgba(255,255,255,.16); color: #EAF7F6;
+    display: inline-block; background: rgba(255,255,255,.16); color: #EAF2FA;
     border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
     padding: 3px 12px; font-size: .78rem; margin-top: 12px; margin-right: 8px;
 }
 
 /* ---------- KPI cards ---------- */
 .kpi-card {
-    background: #FFFFFF; border: 1px solid #E1ECEC; border-radius: 14px;
-    padding: 16px 20px 14px 20px; box-shadow: 0 2px 6px rgba(14, 124, 123, .07);
-    border-top: 4px solid #0E7C7B; height: 118px;
+    background: #FFFFFF; border: 1px solid #E2EAF2; border-radius: 14px;
+    padding: 16px 20px 14px 20px; box-shadow: 0 2px 6px rgba(29, 95, 168, .07);
+    border-top: 4px solid #1D5FA8; height: 118px;
 }
-.kpi-card.orange { border-top-color: #E76F51; }
+.kpi-card.orange { border-top-color: #D97706; }
 .kpi-label { font-size: .82rem; color: #5B7282; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.kpi-value { font-size: 2.1rem; font-weight: 800; color: #0E7C7B; line-height: 1.15; }
-.kpi-card.orange .kpi-value { color: #E76F51; }
+.kpi-value { font-size: 2.1rem; font-weight: 800; color: #1D5FA8; line-height: 1.15; }
+.kpi-card.orange .kpi-value { color: #D97706; }
 .kpi-sub   { font-size: .76rem; color: #8AA3AD; margin-top: 2px; }
 
 /* ---------- section titles ---------- */
 .sec-title {
-    color: #0B5E5D; font-weight: 700; font-size: 1.15rem;
-    border-left: 5px solid #0E7C7B; padding-left: 10px; margin: 6px 0 12px 0;
+    color: #0F3D6E; font-weight: 700; font-size: 1.15rem;
+    border-left: 5px solid #1D5FA8; padding-left: 10px; margin: 6px 0 12px 0;
 }
 
 /* ---------- tighten default padding ---------- */
@@ -79,7 +80,7 @@ def _find_data_file():
 
 @st.cache_data
 def load_data(file_path, file_mtime):
-    # file_mtime 参与缓存 key：数据文件更新后缓存自动失效
+    # file_mtime participates in the cache key: editing the xlsx invalidates cache
     df = pd.read_excel(file_path, sheet_name='All_Drugs')
     df['Approval Year'] = pd.to_numeric(df['Approval Year'], errors='coerce')
 
@@ -215,69 +216,97 @@ tab1, tab2, tab3, tab4 = st.tabs(["📈 Overview", "🔍 Drug Database", "🧪 F
 # Tab 1 — Overview
 # ============================================================
 with tab1:
-    c1, c2 = st.columns(2)
+    t1, t2 = st.columns(2)
 
-    with c1:
+    with t1:
         if not asd_years.empty:
             yr = asd_years.astype(int).value_counts().sort_index()
-            fig = go.Figure()
-            fig.add_bar(x=yr.index, y=yr.values, name='Per year',
-                        marker_color=ACCENT, text=yr.values, textposition='outside')
-            fig.add_scatter(x=yr.index, y=yr.cumsum(), name='Cumulative',
-                            yaxis='y2', mode='lines+markers', line=dict(color=ACCENT2, width=3))
-            fig.update_layout(
-                title="ASD Approvals per Year (cumulative overlay)",
-                template=PLOTLY_TEMPLATE, height=380,
-                yaxis=dict(title='Approvals', tickmode='linear', dtick=1),
-                yaxis2=dict(title='Cumulative', overlaying='y', side='right', showgrid=False),
-                xaxis=dict(tickmode='linear', dtick=1),
-                legend=dict(orientation='h', y=1.12),
-            )
+            fig = px.bar(x=yr.index, y=yr.values, text=yr.values,
+                         title="ASD approvals per year",
+                         color_discrete_sequence=[ACCENT])
+            fig.update_traces(textposition='outside', textfont_size=13,
+                              textfont_color=BLUE_DARK)
+            fig.update_layout(template=PLOTLY_TEMPLATE, height=400, showlegend=False,
+                              margin=dict(t=50, b=20),
+                              xaxis=dict(tickmode='linear', dtick=1, title=None,
+                                         range=[yr.index.min() - 0.6, yr.index.max() + 0.6]),
+                              yaxis=dict(title='Approvals', tickmode='linear', dtick=1,
+                                         range=[0, max(yr.values) + 1.2]))
             st.plotly_chart(fig, width='stretch')
         else:
             st.info("No approval-year data.")
 
-    with c2:
-        solid = df['Drug Solid Form'].fillna('N/A').replace('', 'N/A').value_counts().reset_index()
+    with t2:
+        if not asd_years.empty:
+            cum = yr.cumsum()
+            total_cum = int(cum.iloc[-1])
+            figc = go.Figure()
+            figc.add_scatter(x=cum.index, y=cum.values, mode='lines+markers+text',
+                             line=dict(color=ACCENT2, width=3), marker=dict(size=6),
+                             fill='tozeroy', fillcolor='rgba(217, 119, 6, .10)',
+                             text=[''] * (len(cum) - 1) + [str(total_cum)],
+                             textposition='top left',
+                             textfont=dict(size=16, color=ACCENT2),
+                             cliponaxis=False)
+            figc.update_layout(template=PLOTLY_TEMPLATE, height=400, showlegend=False,
+                               title=f"Cumulative ASD approvals — {total_cum} total",
+                               margin=dict(t=50, b=20, r=50),
+                               xaxis=dict(tickmode='linear', dtick=1, title=None,
+                                          range=[cum.index.min() - 0.6, cum.index.max() + 1.2]),
+                               yaxis=dict(title='Cumulative',
+                                          range=[0, total_cum * 1.15]))
+            st.plotly_chart(figc, width='stretch')
+
+    m1, m2 = st.columns(2)
+
+    with m1:
+        # Solid form among oral drugs only; N/A (liquids etc.) excluded from the pie
+        df_oral = df[df['Oral Administration'].astype(str).str.lower().eq('yes')]
+        solid_raw = df_oral['Drug Solid Form'].fillna('N/A').replace('', 'N/A')
+        n_na = int((solid_raw == 'N/A').sum())
+        solid = solid_raw[solid_raw != 'N/A'].value_counts().reset_index()
         solid.columns = ['Solid Form', 'Count']
         fig2 = px.pie(solid, values='Count', names='Solid Form', hole=0.45,
-                      title=f"Solid Form Across All {len(df)} Analyzed Drugs",
-                      color_discrete_sequence=px.colors.sequential.Teal)
-        fig2.update_layout(template=PLOTLY_TEMPLATE, height=380)
+                      title=f"Solid form of {len(df_oral)} oral drugs",
+                      color='Solid Form',
+                      color_discrete_map={'ASD': ACCENT2, 'Crystalline': ACCENT,
+                                          'Pure Amorphous': '#7FA8D9'})
+        fig2.update_layout(template=PLOTLY_TEMPLATE, height=420)
         st.plotly_chart(fig2, width='stretch')
+        st.caption(f"Excludes {len(df) - len(df_oral)} non-oral products and "
+                   f"{n_na} liquid/non-solid formulations (N/A).")
 
-    c3, c4 = st.columns(2)
-
-    with c3:
-        tc = df_asd['Therapeutic Category'].dropna().str.strip()
-        tc = tc[tc.ne('') & tc.ne('N/A')]
-        tc_counts = tc.value_counts().head(10).reset_index()
-        tc_counts.columns = ['Therapeutic Category', 'Count']
-        fig3 = px.bar(tc_counts, x='Count', y='Therapeutic Category', orientation='h',
-                      title="ASD Drugs by Therapeutic Category (Top 10)",
-                      color_discrete_sequence=[ACCENT])
-        fig3.update_layout(template=PLOTLY_TEMPLATE, height=420,
-                           yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig3, width='stretch')
-
-    with c4:
-        # Polymer × method heatmap
-        rows = []
-        for _, r in df_asd.iterrows():
-            for p in r['Polymer List']:
-                rows.append({'Polymer': p, 'Method': r['ASD Method Clean']})
-        if rows:
-            pm = pd.DataFrame(rows)
-            pm = pm[pm['Method'] != 'N/A']
-            ct = pd.crosstab(pm['Polymer'], pm['Method'])
-            ct = ct.loc[ct.sum(axis=1).sort_values(ascending=False).index]
-            fig4 = px.imshow(ct, text_auto=True, aspect='auto',
-                             title="Polymer × Manufacturing Method (drug count)",
-                             color_continuous_scale='Teal')
-            fig4.update_layout(template=PLOTLY_TEMPLATE, height=420)
-            st.plotly_chart(fig4, width='stretch')
+    with m2:
+        poly_series = pd.Series([p for l in df_asd['Polymer List'] for p in l])
+        if len(poly_series):
+            pc = poly_series.value_counts().head(10).reset_index()
+            pc.columns = ['Polymer', 'Drugs']
+            figp = px.bar(pc, x='Drugs', y='Polymer', orientation='h',
+                          title="Top ASD polymers",
+                          color_discrete_sequence=[ACCENT])
+            figp.update_layout(template=PLOTLY_TEMPLATE, height=420,
+                               yaxis={'categoryorder': 'total ascending'})
+            st.plotly_chart(figp, width='stretch')
         else:
-            st.info("No polymer/method data.")
+            st.info("No polymer data.")
+
+    # Polymer × method heatmap (full width)
+    rows = []
+    for _, r in df_asd.iterrows():
+        for p in r['Polymer List']:
+            rows.append({'Polymer': p, 'Method': r['ASD Method Clean']})
+    if rows:
+        pm = pd.DataFrame(rows)
+        pm = pm[pm['Method'] != 'N/A']
+        ct = pd.crosstab(pm['Polymer'], pm['Method'])
+        ct = ct.loc[ct.sum(axis=1).sort_values(ascending=False).index]
+        fig4 = px.imshow(ct, text_auto=True, aspect='auto',
+                         title="Polymer × Manufacturing Method (drug count)",
+                         color_continuous_scale='Blues')
+        fig4.update_layout(template=PLOTLY_TEMPLATE, height=460)
+        st.plotly_chart(fig4, width='stretch')
+    else:
+        st.info("No polymer/method data.")
 
 # ============================================================
 # Tab 2 — Drug Database
@@ -290,7 +319,8 @@ with tab2:
         search = st.text_input("Search drug name / active substance / company")
     with f2:
         solid_opts = sorted(df['Drug Solid Form'].dropna().unique())
-        solid_sel = st.multiselect("Solid form", solid_opts, default=solid_opts)
+        solid_sel = st.multiselect("Solid form", solid_opts,
+                                   default=['ASD'] if 'ASD' in solid_opts else solid_opts)
     with f3:
         years_all = df['Approval Year']
         y_min, y_max = int(years_all.min()), int(years_all.max())
