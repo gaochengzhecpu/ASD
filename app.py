@@ -69,16 +69,17 @@ st.markdown("""
 # ============================================================
 # Data loading & cleaning
 # ============================================================
-@st.cache_data
-def load_data():
+def _find_data_file():
     candidates = [
         'excel/gemini_epar_analysis.xlsx',   # local dev (project folder)
         'gemini_epar_analysis.xlsx',          # repo root (Streamlit Cloud)
     ]
-    file_path = next((p for p in candidates if os.path.exists(p)), None)
-    if file_path is None:
-        return pd.DataFrame()
+    return next((p for p in candidates if os.path.exists(p)), None)
 
+
+@st.cache_data
+def load_data(file_path, file_mtime):
+    # file_mtime 参与缓存 key：数据文件更新后缓存自动失效
     df = pd.read_excel(file_path, sheet_name='All_Drugs')
     df['Approval Year'] = pd.to_numeric(df['Approval Year'], errors='coerce')
 
@@ -154,7 +155,8 @@ def load_data():
     return df
 
 
-df = load_data()
+_data_file = _find_data_file()
+df = load_data(_data_file, os.path.getmtime(_data_file)) if _data_file else pd.DataFrame()
 if df.empty:
     st.error("Data file not found. Expected `excel/gemini_epar_analysis.xlsx` (local) or `gemini_epar_analysis.xlsx` (repo root).")
     st.stop()
