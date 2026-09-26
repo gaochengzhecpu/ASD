@@ -1,516 +1,307 @@
-"""
-EMA Approved ASD Drugs — Streamlit Dashboard
-=============================================
-Data: CMC properties extracted from EMA EPAR "Quality aspects" sections
-      by Gemini (see PROJECT_SUMMARY.md), stored in gemini_epar_analysis.xlsx.
-
-Run locally:   streamlit run app.py
-"""
-import os
+"""Public EPAR / CMC evidence explorer. No runtime model or embedding API calls."""
+from pathlib import Path
+import json
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
+import retrieval
+from bundle import EVIDENCE_ROOT
+from data_access import load_json, product_rows, field_rows, wide_rows, flat_value, citation, safe_csv, FIELD_LABELS, GROUPS
 
-# ============================================================
-# Page & style
-# ============================================================
-st.set_page_config(
-    page_title="EMA Approved ASD Drugs",
-    page_icon="💊",
-    layout="wide",
-)
-
-DATA_LAST_UPDATED = "2026-07-25"
-ACCENT = "#1D5FA8"    # primary pharma blue
-ACCENT2 = "#D97706"   # amber highlight
-BLUE_DARK = "#0F3D6E"
-
-st.markdown("""
-<style>
-/* ---------- header band ---------- */
-.header-band {
-    background: linear-gradient(100deg, #0F3D6E 0%, #1D5FA8 60%, #3B83C4 100%);
-    border-radius: 14px;
-    padding: 30px 36px 26px 36px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(29, 95, 168, .22);
-}
-.header-band h1 { color: #FFFFFF; margin: 0; font-size: 2.1rem; font-weight: 800; letter-spacing: .3px; }
-.header-band p  { color: #D3E4F5; margin: 8px 0 0 0; font-size: .95rem; }
-.header-band .badge {
-    display: inline-block; background: rgba(255,255,255,.16); color: #EAF2FA;
-    border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
-    padding: 3px 12px; font-size: .78rem; margin-top: 12px; margin-right: 8px;
-}
-
-/* ---------- KPI cards ---------- */
-.kpi-card {
-    background: #FFFFFF; border: 1px solid #E2EAF2; border-radius: 14px;
-    padding: 16px 20px 14px 20px; box-shadow: 0 2px 6px rgba(29, 95, 168, .07);
-    border-top: 4px solid #1D5FA8; height: 118px;
-}
-.kpi-card.orange { border-top-color: #D97706; }
-.kpi-label { font-size: .82rem; color: #5B7282; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.kpi-value { font-size: 2.1rem; font-weight: 800; color: #1D5FA8; line-height: 1.15; }
-.kpi-card.orange .kpi-value { color: #D97706; }
-.kpi-sub   { font-size: .76rem; color: #8AA3AD; margin-top: 2px; }
-
-/* ---------- section titles ---------- */
-.sec-title {
-    color: #0F3D6E; font-weight: 700; font-size: 1.15rem;
-    border-left: 5px solid #1D5FA8; padding-left: 10px; margin: 6px 0 12px 0;
-}
-
-/* ---------- tighten default padding ---------- */
-.block-container { padding-top: 2rem; }
-</style>
-""", unsafe_allow_html=True)
-
-# ============================================================
-# Data loading & cleaning
-# ============================================================
-def _find_data_file():
-    candidates = [
-        'excel/gemini_epar_analysis.xlsx',   # local dev (project folder)
-        'gemini_epar_analysis.xlsx',          # repo root (Streamlit Cloud)
-    ]
-    return next((p for p in candidates if os.path.exists(p)), None)
-
+ROOT=Path(__file__).resolve().parent
+st.set_page_config(page_title='EMA ASD & CMC Evidence',page_icon='💊',layout='wide')
+st.markdown('''<style>
+.block-container{max-width:1480px;padding-top:2.5rem;padding-bottom:4rem}
+h1,h2,h3{letter-spacing:-.03em}h1{font-weight:750!important}
+.hero{background:linear-gradient(115deg,#102b4b,#214e78 68%,#266d80);padding:30px 36px;border-radius:18px;color:white;margin-bottom:24px}
+.hero h1{font-size:2.3rem;margin:5px 0 12px;color:white!important;line-height:1.15}
+.hero p{color:#d6e4ef;margin:0;max-width:850px;font-size:1rem}
+.eyebrow{font-size:.73rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#a9dfce;margin-bottom:12px}
+.hero-meta{margin-top:18px;font-size:.78rem;color:#c6d9e8}
+.stMetric{background:#f1f6fa;border:1px solid #dce6ee;border-radius:12px;padding:15px 20px}
+[data-testid="stMetricValue"]{color:#153f65}
+div[data-testid="stExpander"]{border-color:#dce6ee}
+div[data-testid="stAlert"]{border-radius:10px}
+</style>''',unsafe_allow_html=True)
 
 @st.cache_data
-def load_data(file_path, file_mtime):
-    # file_mtime participates in the cache key: editing the xlsx invalidates cache
-    df = pd.read_excel(file_path, sheet_name='All_Drugs')
-    df['Approval Year'] = pd.to_numeric(df['Approval Year'], errors='coerce')
+def dataset():return load_json('products.json'),load_json('manifest.json'),load_json('benchmark.json'),load_json('evaluation.json')
+products,manifest,benchmark,evaluation=dataset()
+by_id={p['id']:p for p in products};by_name={p['product']:p for p in products}
+df=pd.DataFrame(product_rows(products))
 
-    # ---- Normalize polymer names ----
-    def clean_polymer(p):
-        pl = str(p).lower()
-        if 'succinate' in pl or 'hpmcas' in pl or 'hpmc-as' in pl:
-            return 'HPMCAS'
-        if 'copovidone' in pl or 'vinyl acetate copolymer' in pl:
-            return 'Copovidone'
-        if ('hpmc' in pl or 'hypromellose' in pl) and 'phthalate' not in pl:
-            return 'HPMC'
-        if 'povidone' in pl and 'copovidone' not in pl:
-            return 'Povidone (PVP)'
-        if 'soluplus' in pl:
-            return 'Soluplus'
-        return str(p).strip()
+def download_csv(label,rows,name,key):
+    table=rows if isinstance(rows,pd.DataFrame) else pd.DataFrame(rows)
+    st.download_button(label,safe_csv(table),file_name=name,mime='text/csv',key=key)
+def download_json(label,obj,name,key):
+    st.download_button(label,json.dumps(obj,ensure_ascii=False,indent=2).encode('utf-8'),file_name=name,mime='application/json',key=key)
+def jump(page,product=None):
+    st.session_state['section']=page
+    if product:
+        st.session_state['detail_product']=product
+        st.session_state['db_search']=''
+        st.session_state['db_labels']=[]
+        st.session_state['db_period']='All 351 products'
 
-    def polymer_list(s):
-        if pd.isna(s) or str(s).strip() in ('', 'N/A', 'nan'):
-            return []
-        parts = str(s).replace(';', ',').split(',')
-        return sorted({clean_polymer(p) for p in parts if p.strip() and p.strip().lower() != 'n/a'})
+def source_panel(ident):
+    data=citation(ident)
+    if not data:st.warning('Source identifier unavailable in this snapshot.');return
+    p=by_id[data['product_id']]
+    st.caption(f"{p['product']} · {ident}")
+    st.markdown('[Official EMA product page]('+p['metadata']['ema_url']+')')
+    if data['kind']=='page':
+        st.caption(f"CMC crop page {data['page']} · {data['source']}");st.text(data['text'])
+    elif data['kind']=='field':
+        st.write(FIELD_LABELS.get(data['key'],data['key']));st.write(flat_value(data['value']))
+        st.caption('Evidence status: '+data['status'])
+        for e in data['evidence']:
+            st.text(e.get('quote',''));st.caption(f"CMC crop page {e['page']} · {e.get('page_id','')}")
+    else:st.json(data['value'])
 
-    df['Polymer List'] = df['ASD Polymer'].apply(polymer_list)
-    df['ASD Polymer Clean'] = df['Polymer List'].apply(lambda l: ', '.join(l) if l else 'N/A')
+def overview():
+    st.markdown('''<div class="hero"><div class="eyebrow">Public regulatory evidence → formulation knowledge</div>
+    <h1>EMA ASD &amp; CMC Evidence</h1><p>Explore oral medicines, inspect formulation evidence, and trace extracted properties back to their CMC source.</p>
+    <div class="hero-meta">Corpus: 20 September 2026 · Website: 26 September 2026 · Research prototype by Chengzhe Gao</div></div>''',unsafe_allow_html=True)
+    counts=manifest['working_labels'];positive=counts['ASD']+counts['Likely ASD']
+    for col,label,value,note in zip(st.columns(4),['Selected oral products','CMC records extracted','ASD working set','FDA-overlap benchmark'],[len(products),manifest['completed'],positive,len(benchmark['rows'])],['337 baseline + 14 additions','1 public CMC source unavailable','28 extraction labels + 11 likely ASD','29 reference positives; 230 assumed negatives']):
+        col.metric(label,value);col.caption(note)
+    st.info('Scope: selected oral products first authorised through the EU centralised procedure, January 2010–20 September 2026. Generics, biosimilars and hybrids are excluded. This is not a count of all EMA medicines or new molecular entities.')
+    st.subheader('From an ASD list to a reviewable CMC resource')
+    for col,title,body,label,route in zip(st.columns(3),['Explore all 351 products','Ask for the evidence','Inspect the evaluation'],['Chemical structures, salt and solid form, formulation, excipients, manufacturing, and ASD-specific fields.','Search CMC passages, inspect cited pages, and use complete field scans for catalog questions.','Compare V1, V2 and V3 errors, reference-label disputes, and the RAG regression tests.'],['Open CMC database','Open evidence search','Open benchmark'],['CMC database','Evidence search','Benchmark & validation']):
+        with col:
+            st.markdown('**'+title+'**');st.write(body)
+            st.button(label,on_click=jump,args=(route,'Palsonify') if route=='CMC database' else (route,),width='stretch')
+    st.divider()
+    a,b=st.columns([1.2,1])
+    with a:
+        st.subheader('ASD working set by authorisation year')
+        subset=df[df['Working label'].isin(['ASD','Likely ASD'])].copy()
+        subset['Label layer']=subset['Working label'].replace({'ASD':'Original extraction: ASD','Likely ASD':'Later review: likely ASD'})
+        annual=subset.groupby(['Year','Label layer']).size().reset_index(name='Products')
+        fig=px.bar(annual,x='Year',y='Products',color='Label layer',color_discrete_map={'Original extraction: ASD':'#245d89','Later review: likely ASD':'#dca24a'})
+        fig.update_layout(height=330,margin=dict(l=5,r=5,t=10,b=5),legend_title_text='',legend=dict(orientation='h',y=-.3),xaxis=dict(dtick=2),plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig,width='stretch')
+        st.caption('Any ASD entity yields an ASD product label. Labels include interpretations and refer to the reviewed formulation; this is not independently validated prevalence.')
+    with b:
+        st.subheader('Keep uncertainty visible')
+        order=['ASD','Likely ASD','Non-ASD','Likely non-ASD','Unresolved','Inorganic adsorbate','Source unavailable']
+        st.dataframe(pd.DataFrame([{'Working classification':k,'Products':counts[k]} for k in order]),hide_index=True,width='stretch')
+        st.caption('Later review reclassified 58 originally insufficient records using saved evidence. Original labels remain available alongside the review.')
+    st.subheader('14 products added after the February baseline')
+    st.dataframe(df[df['New since February']][['Product','Active substance','First authorisation','Working label','CMC availability']],hide_index=True,width='stretch')
+    st.caption('Includes Ojemda and Palsonify. Etcamah lacks a public CMC source in this snapshot.')
+    with st.expander('What changed from the July website?'):
+        st.markdown('''- Replaced the legacy 457-record denominator with a defined 337-product February cohort plus 14 additions.
+- Replaced “34 confirmed ASD” with explicit original and later-review label layers.
+- Expanded from an ASD-only list to 351 products, 9,254 field records and 435 structure images.
+- Added CMC source pages, benchmark errors and retrieval evaluation.
+- This is a September snapshot, not a live EMA feed.''')
 
-    # ---- Normalize manufacturing methods ----
-    def clean_method(m):
-        ml = str(m).lower()
-        if 'spray' in ml:
-            return 'Spray Drying'
-        if 'melt' in ml or 'hme' in ml or 'extrusion' in ml:
-            return 'Hot-Melt Extrusion'
-        if 'precipitation' in ml:
-            return 'Co-precipitation'
-        if pd.isna(m) or ml.strip() in ('', 'n/a', 'nan'):
-            return 'N/A'
-        return str(m).strip()
+def cmc_database():
+    st.title('CMC database');st.write('One product at a time, with the source and uncertainty preserved.')
+    a,b,c=st.columns([2,1,1])
+    term=a.text_input('Search product, ingredient or company',key='db_search')
+    labels=b.multiselect('Working classification',list(manifest['working_labels']),key='db_labels')
+    period=c.selectbox('Approval cohort',['All 351 products','February baseline (337)','Added after February (14)'],key='db_period')
+    subset=df.copy()
+    if term:
+        match=subset[['Product','Active substance','Company']].fillna('').astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)
+        subset=subset[match]
+    if labels:subset=subset[subset['Working label'].isin(labels)]
+    if period!='All 351 products':subset=subset[subset['New since February']==period.startswith('Added')]
+    st.caption(f'{len(subset)} of {len(products)} products · Search matches are literal, not regular expressions.')
+    selected=[by_name[n] for n in subset['Product']]
+    view=st.radio('Table view',['Product summary','All CMC fields — one row per product'],horizontal=True)
+    display=subset[['Product','Active substance','First authorisation','Company','Original label','Working label','CMC availability']] if view=='Product summary' else pd.DataFrame(wide_rows(selected))
+    st.dataframe(display,hide_index=True,width='stretch',height=340)
+    with st.expander('Download this selection'):
+        a,b,c=st.columns(3)
+        with a:download_csv('Wide CMC table CSV',wide_rows(selected),'ema_products_cmc_wide.csv','download_products')
+        with b:download_csv('All structured fields CSV',field_rows(selected),'ema_cmc_fields.csv','download_fields')
+        with c:download_json('Full structured JSON',selected,'ema_cmc_records.json','download_records')
+        st.caption('Field CSV keeps every entity, value, evidence status, quotation and page. Structure images are shown below.')
+    if subset.empty:st.info('No matching products. Clear or broaden the filters.');return
+    options=sorted(subset['Product'])
+    if st.session_state.get('detail_product') not in options:st.session_state['detail_product']='Palsonify' if 'Palsonify' in options else options[0]
+    name=st.selectbox('Inspect a product',options,key='detail_product');p=by_name[name];m=p['metadata']
+    st.subheader(f"{name} · {m.get('inn') or m.get('active_substance','')}")
+    st.caption(f"{m.get('holder','')} · First authorised {m.get('first_approval_date','')} · {p['id']}")
+    st.link_button('Official EMA product page',m['ema_url'])
+    a,b=st.columns(2);a.metric('Original extraction label',p['original_label']);b.metric('Working classification',p['working_label'])
+    if p['review']:st.info('Later interpretation from saved records · '+p['review']['adjudication']);st.write(p['review']['reason'])
+    if not p['fields']:st.warning('Public CMC source unavailable in this snapshot. Technical properties and ASD status are unknown.');return
+    st.caption('Labels apply to the reviewed formulation. An original extraction label can be reported or interpreted; inspect the field status below.')
+    with st.expander('Document scope and source identity'):st.write(p['scope']);st.json(p['source'])
+    tabs=st.tabs(list(GROUPS)+['Structures','Source pages'])
+    for tab,(group,keys) in zip(tabs,GROUPS.items()):
+        with tab:
+            fs=[f for f in p['fields'] if f['key'] in keys]
+            table=[{'Field':FIELD_LABELS.get(f['key'],f['key']),'Entity':f.get('entity',''),'Value':flat_value(f['value']),'Status':f['status']} for f in fs]
+            st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch')
+            for f in fs:
+                with st.expander(FIELD_LABELS.get(f['key'],f['key'])+' · '+f.get('entity','')+' · '+f['status']):
+                    st.write(flat_value(f['value']))
+                    if f.get('note'):st.caption(f['note'])
+                    if not f.get('evidence'):st.caption('No text quotation attached to this field. Absence is not a numerical zero.')
+                    for e in f.get('evidence',[]):
+                        st.text(e.get('quote',''));st.caption(f"CMC crop p. {e.get('page')}"+(f" · original report p. {e['printed_page']}" if e.get('printed_page') else ''))
+                    if f.get('visual_evidence'):st.json(f['visual_evidence'])
+    with tabs[-2]:
+        if not p['structures']:st.info('No structure image extracted in this record.')
+        cols=st.columns(2)
+        for i,im in enumerate(p['structures']):
+            with cols[i%2]:st.image(str(EVIDENCE_ROOT/im['file']),caption=f"{im['entity']} · CMC crop p. {im.get('page','?')}",width='content')
+    with tabs[-1]:
+        with retrieval.connect() as conn:pages=conn.execute('SELECT id,page FROM pages WHERE product_id=? ORDER BY page',(p['id'],)).fetchall()
+        if pages:
+            source_id=st.selectbox('CMC page',[r['id'] for r in pages],format_func=lambda x:'CMC crop page '+x.split(':p')[-1],key='product_source_page')
+            source_panel(source_id);st.caption('Saved CMC text pages; drawings appear under Structures. The EMA link provides the published documents.')
 
-    df['ASD Method Clean'] = df['ASD Manufacturing Method'].apply(clean_method)
+def evidence_search():
+    st.title('Evidence search');st.write('Retrieve CMC facts and source passages. Use the catalog for complete lists and explicit date filters.')
+    st.caption('Live retrieval runs on the server. No model API is called. Saved Codex answers are labelled examples; this website does not generate new model answers.')
+    mode=st.radio('Search mode',['Question search','Complete catalog','Saved answer examples'],horizontal=True,key='search_mode')
+    if mode=='Saved answer examples':
+        english={
+          'D01':('Why can Palsonify have a crystalline DS and an ASD drug product?','The commercial tablet is described as an amorphous spray-dried dispersion. Input DS Form A and the final ASD belong to different manufacturing stages; there is no contradiction.'),
+          'D02':('What is the pKa of Palsonify?','No numerical pKa is disclosed in the saved CMC record. Keep this field as not reported; do not fill it from assumption or model memory.'),
+          'D03':('Do copovidone and spray granulation make Rhapsido an ASD?','No. The source describes retained crystalline Form A in the finished product and a nanosuspension route. These facts support a non-ASD interpretation.'),
+          'D05':('Does this Xtandi EPAR describe the later ASD tablet?','The record covers the earlier liquid-filled soft capsule. It cannot establish the solid state of a later tablet formulation.'),
+          'T05':('What are the Sotyktu ASD carrier and process?','HPMCAS H grade is reported. API and polymer are dissolved in acetone/water and the solution is spray-dried.'),
+          'T06':('Are Ojemda HME and copovidone both directly confirmed?','Extrusion is reported; interpreting it as hot-melt extrusion is qualified. Copovidone is listed, but its ASD-carrier role is not explicitly confirmed.')}
+        index={x['id']:x for x in evaluation['regression']}
+        code=st.selectbox('Saved question',list(index),format_func=lambda k:k+' · '+english.get(k,(index[k]['question'],''))[0]);saved=index[code]
+        st.info('Saved Codex answer · generated during internal evaluation, not live. English summaries preserve the saved answer.')
+        st.write(english[code][1] if code in english else saved['answer'])
+        if code in english:
+            with st.expander('Original saved answer'):st.write(saved['answer'])
+        st.caption(saved['review'])
+        for ident in saved.get('citations',[]):
+            with st.expander('Inspect source '+ident):source_panel(ident)
+        return
+    if mode=='Complete catalog':
+        with st.form('catalog_form'):
+            a,b,c=st.columns(3)
+            field=a.selectbox('Field',list(retrieval.FIELD_TERMS),index=list(retrieval.FIELD_TERMS).index('asd_carrier'),format_func=lambda k:FIELD_LABELS.get(k,k))
+            concept=b.selectbox('Term matching',['HPMCAS synonyms','Spray-drying synonyms','Literal text','Exact value'])
+            status=c.selectbox('Evidence status',['Any','reported','partly_reported','interpretation','not_reported','not_applicable'])
+            literal=st.text_input('Text / exact value (used for literal or exact matching)')
+            a,b=st.columns(2)
+            after=a.text_input('First authorisation after (exclusive, YYYY-MM-DD)',placeholder='2026-02-28')
+            before=b.text_input('First authorisation on or before (inclusive, YYYY-MM-DD)',placeholder='2026-09-20')
+            submitted=st.form_submit_button('Scan complete catalog',type='primary')
+        if submitted:
+            try:
+                args={'field':field,'status':None if status=='Any' else status,'after':after.strip() or None,'before':before.strip() or None}
+                if concept=='HPMCAS synonyms':args['concept']='hpmcas'
+                elif concept=='Spray-drying synonyms':args['concept']='spray_drying'
+                elif concept=='Exact value':args['equals']=literal
+                else:args['contains']=literal or None
+                st.session_state['catalog_result']=retrieval.catalog(**args)
+            except ValueError as e:st.session_state.pop('catalog_result',None);st.error(str(e))
+        result=st.session_state.get('catalog_result')
+        if result:
+            st.subheader(f"{result['products']} products · {result['records']} field records")
+            st.caption('Applied filters: '+json.dumps({k:result[k] for k in ['field','contains','equals','concept','status','after_exclusive','before_inclusive']},ensure_ascii=False))
+            st.warning('A polymer-name match does not confirm its carrier role. Counts refer to saved fields, not independently adjudicated formulation truth.')
+            rows=[{'Product':r['name'],'Entity':r['entity'],'Value':flat_value(r['value']),'Status':r['status'],'First authorisation':r['metadata'].get('first_approval_date'),'Citation':r['id']} for r in result['results']]
+            st.dataframe(pd.DataFrame(rows),hide_index=True,width='stretch');download_csv('Download catalog matches',rows,'catalog_matches.csv','catalog_csv')
+            if rows:source_panel(st.selectbox('Inspect a matching field',[r['Citation'] for r in rows],key='catalog_citation'))
+        return
+    with st.form('question_form'):
+        question=st.text_input('CMC question',value='What are the ASD carrier and manufacturing process of Sotyktu?',max_chars=4000)
+        a,b=st.columns([2,1]);product=a.selectbox('Restrict to a product (optional)',['Automatic']+sorted(by_name));limit=b.selectbox('Ranked pages',[5,8,12],index=1)
+        submitted=st.form_submit_button('Retrieve evidence',type='primary')
+    if submitted:
+        try:st.session_state['evidence_result']=retrieval.query(question,limit=limit,product=None if product=='Automatic' else product)
+        except (ValueError,RuntimeError) as e:st.session_state.pop('evidence_result',None);st.error(str(e))
+    result=st.session_state.get('evidence_result')
+    if not result:
+        st.markdown('**Try:** “Palsonify pKa” · “Rhapsido copovidone spray granulation ASD” · “Xtandi dosage form”');return
+    st.subheader('Retrieved evidence');st.caption('Results for: '+result['question'])
+    for warning in result['warnings']:st.warning(warning)
+    for p in result['target_products']:
+        with st.expander(p['product']+' · formulation and document scope'):
+            st.write(p['document_scope'])
+            if p['review']:st.json(p['review'])
+    a,b=st.columns([1,1.1])
+    with a:
+        st.markdown('**Structured records**')
+        for f in result['facts']:
+            name=by_id[f['product_id']]['product']
+            with st.expander(name+' · '+FIELD_LABELS.get(f['key'],f['key'])+' · '+f['status']):
+                st.write(flat_value(f['value']));st.caption(f['entity']+' · '+f['id'])
+                if f['note']:st.caption(f['note'])
+                for e in f['evidence']:
+                    st.text(e.get('quote',''));st.caption(e['page_id']+(' · quotation matched to saved page' if e['quote_verified'] else ' · verify quotation'))
+    with b:
+        st.markdown('**CMC source passages**')
+        for i,ctx in enumerate(result['contexts']):
+            with st.expander(f"{ctx['product']} · CMC p. {ctx['crop_page']} · {ctx['citation']}",expanded=i==0):
+                st.caption('Full page via field citation' if ctx['complete_page'] else 'Ranked passage; inspect the full page for context')
+                st.text(ctx['text']);st.markdown('[Official EMA source]('+by_name[ctx['product']]['metadata']['ema_url']+')')
+    download_json('Export evidence bundle for Codex',result,'epar_evidence_bundle.json','evidence_download')
+    if result['contexts']:
+        with st.expander('Open any retrieved page in full'):source_panel(st.selectbox('Source citation',[x['citation'] for x in result['contexts']],key='full_source'))
 
-    # ---- Excipient functional classification ----
-    categories = {
-        'Filler': ['cellulose', 'lactose', 'mannitol', 'calcium hydrogen phosphate', 'isomalt', 'sucrose'],
-        'Disintegrant': ['croscarmellose', 'crospovidone', 'sodium starch glycolate'],
-        'Lubricant': ['magnesium stearate', 'sodium stearyl fumarate', 'stearic acid'],
-        'Glidant': ['silica', 'talc'],
-        'Coating/Polymer': ['hypromellose', 'copovidone', 'povidone', 'macrogol', 'polyvinyl alcohol',
-                            'shellac', 'carnauba', 'methacrylic', 'triethyl citrate'],
-        'Colorant': ['titanium dioxide', 'iron oxide', 'indigo carmine', 'brilliant blue'],
-        'Surfactant': ['laurilsulfate', 'poloxamer', 'sorbitan', 'polysorbate', 'docusate'],
-        'Plasticizer': ['triacetin', 'propylene glycol', 'glycerol'],
-    }
+def benchmark_view():
+    st.title('Benchmark & validation');st.write('What the comparisons show, where they fail, and what remains to be validated.')
+    tabs=st.tabs(['ASD methods','RAG evaluation','Scope & reproducibility'])
+    with tabs[0]:
+        st.info('Frozen February EMA cohort → 259 products overlapping FDA approvals in 2012–2023. Mapping yields 29 ASD positives; 230 unlisted products are assumed negative for this exploratory comparison.')
+        st.link_button('Moseson et al. (2024), including Tze Ning Hiew','https://doi.org/10.1016/j.ijpx.2024.100259')
+        labels={'v1':'V1 · basic keywords','v2':'V2 · DP-only rules','v3':'V3 · saved Gemini + backfill'}
+        rows=[{'Method':labels[m['name']],**{k:m[k] for k in ['TP','FP','FN','TN']},'Unresolved':259-m['explicit']} for m in benchmark['methods']]
+        st.dataframe(pd.DataFrame(rows),hide_index=True,width='stretch')
+        st.caption('Different document scopes and mixed historical/backfilled V3 inputs: not a controlled model ranking. Vaxchora and Palforzia extend beyond the paper’s NDA scope.')
+        for col,m in zip(st.columns(3),benchmark['methods']):
+            with col:
+                st.markdown('**'+labels[m['name']]+'**');st.markdown('**FN — missed reference ASD**');st.write(', '.join(m['missed']))
+                st.markdown('**FP — reference negative**');st.write(', '.join(x['product'] for x in m['identified'] if x['outcome']=='FP'))
+                if m['unknown']:st.warning('Unresolved: '+', '.join(m['unknown']))
+        st.subheader('An apparent model error can be a formulation mismatch')
+        st.markdown('''- **Xtandi:** early liquid-filled capsules in the reviewed EPAR differ from the later ASD tablets.
+- **Lynparza:** the reviewed capsule is a crystalline solid dispersion; the later tablet differs.
+- **Votubia, Gavreto, Tavneos, Zokinvy and Vanflyta:** evidence supports reviewing possible reference omissions; formulation matching and literature scope must be resolved before changing labels.''')
+        st.caption('Shared explicit FN: Xtandi. Shared reference FP: Votubia, Gavreto, Zokinvy and Vanflyta.')
+        with st.expander('All 259 product-level comparisons'):
+            st.dataframe(pd.DataFrame(benchmark['rows']),hide_index=True,width='stretch');download_csv('Download benchmark comparisons',benchmark['rows'],'benchmark_259.csv','benchmark_csv')
+        with st.expander('Later Codex review — separate, non-blind comparison'):
+            working=load_json('working_label_comparison.json')
+            st.write('The original 337-product cohort has 37 later working ASD labels versus 33 saved Gemini positives. Two additional ASD extraction labels in the extension give a current working set of 39.')
+            st.json({k:v['counts'] for k,v in working['benchmark259'].items()})
+            for line in working['limitations']:st.caption(line)
+    with tabs[1]:
+        a,b,c=st.columns(3);a.metric('Selected regression questions',24);b.metric('Required-field coverage','20/24 → 24/24');c.metric('Additional stress questions',4)
+        st.warning('These questions were used during development. Coverage and citation resolution are not answer accuracy. Answers were generated and reviewed in the same Codex conversation, without an independent blind evaluator.')
+        st.write('44 mechanical checks passed for source consistency, identifiers and query behavior. They do not validate scientific conclusions.')
+        st.dataframe(pd.DataFrame([
+            {'Stress case':'Misspelled Palsonfy','Response':'Suggest Palsonify; confirm identity.'},
+            {'Stress case':'Approvals after February 2026','Response':'Use explicit date-filtered catalog scan.'},
+            {'Stress case':'List all HPMCAS carriers','Response':'14 product matches / 15 records; 7 products have fields marked reported.'},
+            {'Stress case':'Give a certain ASD prevalence','Response':'Specify labels, formulation scope and denominator first.'}]),hide_index=True,width='stretch')
+        for answer in evaluation['regression']:
+            with st.expander(answer['id']+' · '+answer['question']):
+                st.write(answer['answer']);st.caption(answer['review']);st.code(', '.join(answer['citations']) or 'No supporting product citation',language=None)
+        for answer in evaluation['stress']:
+            with st.expander(answer['id']+' · '+answer['question']):st.write(answer['answer']);st.caption(answer['limitation'])
+        download_json('Download 28 saved evaluation cases',evaluation,'rag_evaluation.json','evaluation_json')
+    with tabs[2]:
+        st.markdown('''### Data scope
+Selected centrally authorised oral products from January 2010 through 20 September 2026. Generics, biosimilars and hybrids are excluded. Product count is not molecule count. Historic authorisations are retained; first authorisation does not imply current marketing availability.
 
-    def classify_excipients(exc):
-        out = {k: [] for k in list(categories) + ['Other']}
-        if pd.isna(exc) or not str(exc).strip():
-            return out
-        for p in str(exc).replace(';', ',').split(','):
-            p = p.strip()
-            if not p:
-                continue
-            for cat, kws in categories.items():
-                if any(kw in p.lower() for kw in kws):
-                    out[cat].append(p.title())
-                    break
-            else:
-                out['Other'].append(p.title())
-        return out
+### Evidence contract
+Drug substance and finished product are separate. Commercial formulation, historical development formulation, unit strength and clinical regimen are not interchangeable. Drug loading in the ASD intermediate and whole product have distinct denominators. Numerical pKa, BCS class and carrier roles are not filled from model memory.
 
-    df['Excipient Categories'] = df['Excipients'].apply(classify_excipients)
-    return df
+### Retrieval and answers
+SQLite FTS5/BM25, limited bilingual expansion, product/ingredient aliases and field routing. Exhaustive queries use explicit catalog filters. No embedding or model API is called. Codex generated the saved evaluation answers from retrieved bundles. For a new question, export the evidence bundle for use in Codex. This deployment does not connect a personal Codex session to a public chatbot.
 
+### Validation still needed
+Independent formulation-specific adjudication, unseen questions, answer–citation entailment review and completeness checks. A source-linked answer can still contain an interpretation error.''')
+        st.json(manifest);download_json('Download data manifest',manifest,'manifest.json','manifest_json')
+        st.caption('Independent research prototype using public EMA evidence; not an EMA service or clinical dosing advice. Extraction notes retain their original language.')
 
-_data_file = _find_data_file()
-df = load_data(_data_file, os.path.getmtime(_data_file)) if _data_file else pd.DataFrame()
-if df.empty:
-    st.error("Data file not found. Expected `excel/gemini_epar_analysis.xlsx` (local) or `gemini_epar_analysis.xlsx` (repo root).")
-    st.stop()
-
-df_asd = df[df['Drug Solid Form'].astype(str).str.upper() == 'ASD'].copy()
-
-PLOTLY_TEMPLATE = 'plotly_white'
-
-# ============================================================
-# Header band & KPI cards
-# ============================================================
-st.markdown(f"""
-<div class="header-band">
-  <h1>💊 EMA-Approved Oral ASD Drugs</h1>
-  <p>Amorphous Solid Dispersion (ASD) drugs approved by the European Medicines Agency,
-     extracted from EPAR <i>Quality aspects</i> sections with an LLM pipeline.</p>
-  <span class="badge">Data updated {DATA_LAST_UPDATED}</span>
-  <span class="badge">{len(df)} drugs analyzed</span>
-  <span class="badge">{len(df_asd)} confirmed ASD</span>
-</div>
-""", unsafe_allow_html=True)
-
-asd_years = df_asd['Approval Year'].dropna()
-top_polymer = (pd.Series([p for l in df_asd['Polymer List'] for p in l])
-               .value_counts().idxmax() if df_asd['Polymer List'].map(len).sum() else 'N/A')
-method_counts_all = df_asd.loc[df_asd['ASD Method Clean'] != 'N/A', 'ASD Method Clean'].value_counts()
-top_method = method_counts_all.idxmax() if len(method_counts_all) else 'N/A'
-df_asd_2026 = df_asd[df_asd['Approval Year'] == 2026]
-new26_names = ' · '.join(df_asd_2026['Drug Name']) if len(df_asd_2026) else ''
-
-
-def kpi_card(col, label, value, sub='', orange=False):
-    with col:
-        st.markdown(f"""
-        <div class="kpi-card{' orange' if orange else ''}">
-          <div class="kpi-label">{label}</div>
-          <div class="kpi-value">{value}</div>
-          <div class="kpi-sub">{sub}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-k1, k2, k3, k4, k5 = st.columns(5)
-kpi_card(k1, "Confirmed ASD Drugs", len(df_asd), f"of {len(df)} oral drugs analyzed")
-kpi_card(k2, "Latest ASD Approvals", int(asd_years.max()) if not asd_years.empty else 'N/A',
-         new26_names, orange=True)
-kpi_card(k3, "New ASD in 2026", len(df_asd_2026), new26_names)
-kpi_card(k4, "Top Polymer", top_polymer, "most used ASD carrier")
-kpi_card(k5, "Top ASD Method", top_method, "most used technology")
-
-st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
-
-tab1, tab2, tab3, tab4 = st.tabs(["📈 Overview", "🔍 Drug Database", "🧪 Formulation Insights", "ℹ️ About"])
-
-# ============================================================
-# Tab 1 — Overview
-# ============================================================
-with tab1:
-    t1, t2 = st.columns(2)
-
-    with t1:
-        if not asd_years.empty:
-            yr = asd_years.astype(int).value_counts().sort_index()
-            fig = px.bar(x=yr.index, y=yr.values, text=yr.values,
-                         title="ASD approvals per year",
-                         color_discrete_sequence=[ACCENT])
-            fig.update_traces(textposition='outside', textfont_size=13,
-                              textfont_color=BLUE_DARK)
-            fig.update_layout(template=PLOTLY_TEMPLATE, height=400, showlegend=False,
-                              margin=dict(t=50, b=20),
-                              xaxis=dict(tickmode='linear', dtick=1, title=None,
-                                         range=[yr.index.min() - 0.6, yr.index.max() + 0.6]),
-                              yaxis=dict(title='Approvals', tickmode='linear', dtick=1,
-                                         range=[0, max(yr.values) + 1.2]))
-            st.plotly_chart(fig, width='stretch')
-        else:
-            st.info("No approval-year data.")
-
-    with t2:
-        if not asd_years.empty:
-            cum = yr.cumsum()
-            total_cum = int(cum.iloc[-1])
-            figc = go.Figure()
-            figc.add_scatter(x=cum.index, y=cum.values, mode='lines+markers+text',
-                             line=dict(color=ACCENT2, width=3), marker=dict(size=6),
-                             fill='tozeroy', fillcolor='rgba(217, 119, 6, .10)',
-                             text=[''] * (len(cum) - 1) + [str(total_cum)],
-                             textposition='top left',
-                             textfont=dict(size=16, color=ACCENT2),
-                             cliponaxis=False)
-            figc.update_layout(template=PLOTLY_TEMPLATE, height=400, showlegend=False,
-                               title=f"Cumulative ASD approvals — {total_cum} total",
-                               margin=dict(t=50, b=20, r=50),
-                               xaxis=dict(tickmode='linear', dtick=1, title=None,
-                                          range=[cum.index.min() - 0.6, cum.index.max() + 1.2]),
-                               yaxis=dict(title='Cumulative',
-                                          range=[0, total_cum * 1.15]))
-            st.plotly_chart(figc, width='stretch')
-
-    m1, m2 = st.columns(2)
-
-    with m1:
-        # Solid form among oral drugs only; N/A (liquids etc.) excluded from the pie
-        df_oral = df[df['Oral Administration'].astype(str).str.lower().eq('yes')]
-        solid_raw = df_oral['Drug Solid Form'].fillna('N/A').replace('', 'N/A')
-        n_na = int((solid_raw == 'N/A').sum())
-        solid = solid_raw[solid_raw != 'N/A'].value_counts().reset_index()
-        solid.columns = ['Solid Form', 'Count']
-        fig2 = px.pie(solid, values='Count', names='Solid Form', hole=0.45,
-                      title=f"Solid form of {len(df_oral)} oral drugs",
-                      color='Solid Form',
-                      color_discrete_map={'ASD': ACCENT2, 'Crystalline': ACCENT,
-                                          'Pure Amorphous': '#7FA8D9'})
-        fig2.update_layout(template=PLOTLY_TEMPLATE, height=420)
-        st.plotly_chart(fig2, width='stretch')
-        st.caption(f"Excludes {len(df) - len(df_oral)} non-oral products and "
-                   f"{n_na} liquid/non-solid formulations (N/A).")
-
-    with m2:
-        poly_series = pd.Series([p for l in df_asd['Polymer List'] for p in l])
-        if len(poly_series):
-            pc = poly_series.value_counts().head(10).reset_index()
-            pc.columns = ['Polymer', 'Drugs']
-            figp = px.bar(pc, x='Drugs', y='Polymer', orientation='h',
-                          title="Top ASD polymers",
-                          color_discrete_sequence=[ACCENT])
-            figp.update_layout(template=PLOTLY_TEMPLATE, height=420,
-                               yaxis={'categoryorder': 'total ascending'})
-            st.plotly_chart(figp, width='stretch')
-        else:
-            st.info("No polymer data.")
-
-    # Polymer × method heatmap (full width)
-    rows = []
-    for _, r in df_asd.iterrows():
-        for p in r['Polymer List']:
-            rows.append({'Polymer': p, 'Method': r['ASD Method Clean']})
-    if rows:
-        pm = pd.DataFrame(rows)
-        pm = pm[pm['Method'] != 'N/A']
-        ct = pd.crosstab(pm['Polymer'], pm['Method'])
-        ct = ct.loc[ct.sum(axis=1).sort_values(ascending=False).index]
-        fig4 = px.imshow(ct, text_auto=True, aspect='auto',
-                         title="Polymer × Manufacturing Method (drug count)",
-                         color_continuous_scale='Blues')
-        fig4.update_layout(template=PLOTLY_TEMPLATE, height=460)
-        st.plotly_chart(fig4, width='stretch')
-    else:
-        st.info("No polymer/method data.")
-
-# ============================================================
-# Tab 2 — Drug Database
-# ============================================================
-with tab2:
-    st.markdown('<div class="sec-title">Search & Filter</div>', unsafe_allow_html=True)
-
-    f1, f2, f3 = st.columns([2, 2, 2])
-    with f1:
-        search = st.text_input("Search drug name / active substance / company")
-    with f2:
-        solid_opts = sorted(df['Drug Solid Form'].dropna().unique())
-        solid_sel = st.multiselect("Solid form", solid_opts,
-                                   default=['ASD'] if 'ASD' in solid_opts else solid_opts)
-    with f3:
-        years_all = df['Approval Year']
-        y_min, y_max = int(years_all.min()), int(years_all.max())
-        year_sel = st.slider("Approval year range", y_min, y_max, (y_min, y_max))
-
-    f4, f5, f6 = st.columns([2, 2, 2])
-    with f4:
-        poly_opts = sorted({p for l in df['Polymer List'] for p in l})
-        poly_sel = st.multiselect("ASD polymer", poly_opts)
-    with f5:
-        method_opts = sorted(m for m in df['ASD Method Clean'].unique() if m != 'N/A')
-        method_sel = st.multiselect("ASD method", method_opts)
-    with f6:
-        oral_only = st.checkbox("Oral drugs only", value=True)
-
-    mask = pd.Series(True, index=df.index)
-    if search:
-        s = search.lower()
-        mask &= (df['Drug Name'].str.lower().str.contains(s, na=False)
-                 | df['Active Substance'].astype(str).str.lower().str.contains(s, na=False)
-                 | df['Company'].astype(str).str.lower().str.contains(s, na=False))
-    if solid_sel:
-        mask &= df['Drug Solid Form'].isin(solid_sel)
-    mask &= (df['Approval Year'].isna()
-             | ((df['Approval Year'] >= year_sel[0]) & (df['Approval Year'] <= year_sel[1])))
-    if poly_sel:
-        mask &= df['Polymer List'].apply(lambda l: any(p in l for p in poly_sel))
-    if method_sel:
-        mask &= df['ASD Method Clean'].isin(method_sel)
-    if oral_only:
-        mask &= df['Oral Administration'].astype(str).str.lower().eq('yes')
-
-    filtered = df[mask].copy()
-    st.markdown(f"**{len(filtered)}** drugs match (of {len(df)} total)")
-
-    show_cols = ['Drug Name', 'Active Substance', 'Company', 'Drug Solid Form', 'Dosage Form',
-                 'Approval Year', 'ASD Polymer Clean', 'ASD Method Clean', 'Therapeutic Category']
-    display = filtered[[c for c in show_cols if c in filtered.columns]].rename(
-        columns={'ASD Polymer Clean': 'ASD Polymer', 'ASD Method Clean': 'ASD Method'})
-    st.dataframe(display, width='stretch', hide_index=True)
-
-    st.download_button(
-        "⬇️ Download filtered data (CSV)",
-        display.to_csv(index=False).encode('utf-8-sig'),
-        file_name="ema_asd_drugs_filtered.csv",
-        mime="text/csv",
-    )
-
-    st.markdown('<div class="sec-title">Drug Detail</div>', unsafe_allow_html=True)
-    if len(filtered):
-        pick = st.selectbox("Select a drug", sorted(filtered['Drug Name'].unique()))
-        if pick:
-            r = filtered[filtered['Drug Name'] == pick].iloc[0]
-            is_asd = str(r['Drug Solid Form']).upper() == 'ASD'
-            if is_asd:
-                st.success(f"**{pick}** — confirmed ASD")
-            else:
-                st.info(f"**{pick}** — solid form: {r['Drug Solid Form']}")
-            d1, d2 = st.columns(2)
-            with d1:
-                st.markdown("**General**")
-                st.write(f"- Active substance: {r['Active Substance']}")
-                st.write(f"- Company: {r.get('Company', 'N/A')}")
-                st.write(f"- Approval year: {int(r['Approval Year']) if pd.notna(r['Approval Year']) else 'N/A'}")
-                st.write(f"- Therapeutic category: {r.get('Therapeutic Category', 'N/A')}")
-                st.write(f"- Dosage form: {r.get('Dosage Form', 'N/A')}")
-                st.write(f"- Strengths: {r.get('Dose Strengths', 'N/A')}")
-            with d2:
-                st.markdown("**Formulation (CMC)**")
-                st.write(f"- Solid form: {r['Drug Solid Form']}")
-                st.write(f"- ASD polymer: {r['ASD Polymer Clean']}")
-                st.write(f"- ASD method: {r['ASD Method Clean']}")
-                st.write(f"- Drug loading: {r.get('Drug Loading', 'N/A')}")
-                st.write(f"- Process: {r.get('Manufacturing Process', 'N/A')}")
-            st.markdown("**Formulation summary**")
-            st.write(r.get('Formulation Summary', 'N/A'))
-            with st.expander("All excipients"):
-                st.write(r.get('Excipients', 'N/A'))
-    else:
-        st.warning("No drugs match the current filters.")
-
-# ============================================================
-# Tab 3 — Formulation Insights
-# ============================================================
-with tab3:
-    st.markdown('<div class="sec-title">Excipient Functional Roles in ASD Formulations</div>',
-                unsafe_allow_html=True)
-
-    cat_totals = {}
-    exc_counter = {}
-    for cats in df_asd['Excipient Categories']:
-        for cat, items in cats.items():
-            cat_totals[cat] = cat_totals.get(cat, 0) + len(items)
-            for it in items:
-                exc_counter[it] = exc_counter.get(it, 0) + 1
-
-    i1, i2 = st.columns(2)
-    with i1:
-        if cat_totals:
-            ct = pd.DataFrame(sorted(cat_totals.items(), key=lambda x: x[1]),
-                              columns=['Category', 'Occurrences'])
-            fig5 = px.bar(ct, x='Occurrences', y='Category', orientation='h',
-                          title="Excipient Categories Across ASD Drugs",
-                          color_discrete_sequence=[ACCENT])
-            fig5.update_layout(template=PLOTLY_TEMPLATE, height=400)
-            st.plotly_chart(fig5, width='stretch')
-
-    with i2:
-        if exc_counter:
-            top_exc = pd.DataFrame(sorted(exc_counter.items(), key=lambda x: -x[1])[:15],
-                                   columns=['Excipient', 'Drugs'])
-            fig6 = px.bar(top_exc, x='Drugs', y='Excipient', orientation='h',
-                          title="Top 15 Individual Excipients",
-                          color_discrete_sequence=[ACCENT2])
-            fig6.update_layout(template=PLOTLY_TEMPLATE, height=400,
-                               yaxis={'categoryorder': 'total ascending'})
-            st.plotly_chart(fig6, width='stretch')
-
-    # Superdisintegrant choice by ASD method
-    st.markdown('<div class="sec-title">Superdisintegrant Choice by ASD Method</div>',
-                unsafe_allow_html=True)
-    rows = []
-    for _, r in df_asd.iterrows():
-        m = r['ASD Method Clean']
-        if m == 'N/A':
-            continue
-        exc = str(r.get('Excipients', '')).lower()
-        rows.append({'Method': m, 'Disintegrant': 'Croscarmellose Sodium',
-                     'Used': 'croscarmellose' in exc})
-        rows.append({'Method': m, 'Disintegrant': 'Crospovidone',
-                     'Used': 'crospovidone' in exc})
-    sd = pd.DataFrame(rows)
-    if len(sd):
-        sd = sd[sd['Used']].groupby(['Method', 'Disintegrant']).size().reset_index(name='Drugs')
-        fig7 = px.bar(sd, x='Method', y='Drugs', color='Disintegrant', barmode='group',
-                      title="Croscarmellose vs Crospovidone Usage by ASD Method",
-                      color_discrete_sequence=[ACCENT, ACCENT2])
-        fig7.update_layout(template=PLOTLY_TEMPLATE, height=380)
-        st.plotly_chart(fig7, width='stretch')
-
-    st.markdown('<div class="sec-title">💡 Insights from the Data</div>', unsafe_allow_html=True)
-    total_asd = len(df_asd)
-    ccs_n = df_asd['Excipients'].str.contains('croscarmellose', case=False, na=False).sum()
-    csp_n = df_asd['Excipients'].str.contains('crospovidone', case=False, na=False).sum()
-    mgs_n = df_asd['Excipients'].str.contains('magnesium stearate', case=False, na=False).sum()
-
-    fcol1, fcol2 = st.columns(2)
-    with fcol1:
-        st.info(f"**Magnesium Stearate rules them all.** It appears in **{mgs_n}/{total_asd}** ASD "
-                f"oral drugs — the undisputed king of downstream tableting lubricants.")
-        st.info(f"**The Superdisintegrant gap.** Croscarmellose Sodium (**{ccs_n}** drugs) crushes "
-                f"Crospovidone (**{csp_n}** drugs). Its extreme swelling and fibrous structure tear apart "
-                f"dense, glassy polymeric matrices from spray drying or HME.")
-    with fcol2:
-        st.info("**HPMCAS & Copovidone dominate** the ASD polymer space, repeatedly stabilizing "
-                "these difficult, poorly soluble APIs.")
-        st.info("**Oncology is the biggest benefactor.** Over half of these insoluble ASD APIs are "
-                "targeted cancer therapies (mostly kinase inhibitors). Salt-based dissolution modulators "
-                "(e.g., NaCl in Zepatier, Aquipta, Tukysa) appear as a niche but clever trick.")
-
-# ============================================================
-# Tab 4 — About
-# ============================================================
-with tab4:
-    st.markdown('<div class="sec-title">How this dataset was built</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-1. **Source**: EMA centrally authorised medicines report — all innovative human medicines approved since 2010
-   (generics and biosimilars excluded).
-2. **Screening**: oral route determined via the EMA Article 57 database; **{len(df)}** oral drug products analyzed.
-3. **Document analysis**: the *Quality aspects* section of each EPAR (public assessment report) was extracted
-   and read by **Google Gemini** with an enforced JSON schema, pulling out 17 CMC fields per drug —
-   solid form (ASD / amorphous / crystalline), excipients, ASD polymer & manufacturing method, process flow, etc.
-4. **Verification**: ASD assignments were cross-checked against the formulation descriptions.
-5. **Last update**: {DATA_LAST_UPDATED} — covers EMA approvals through July 2026.
-""")
-
-    st.markdown('<div class="sec-title">Caveats</div>', unsafe_allow_html=True)
-    st.markdown("""
-- Fields are **AI-extracted** from public assessment reports; always confirm critical values against the
-  original EPAR before citing.
-- `Drug loading` is often not disclosed in EPARs and may be `N/A`.
-- Non-oral products flagged during review are kept in the database with `Oral Administration = No`.
-""")
-
-    st.markdown('<div class="sec-title">🙏 Acknowledgements</div>', unsafe_allow_html=True)
-    st.info("Thank you my wife Xiuli Li for the support. Thank my friend Tianyi Li, Yongjian Wang, Fan Meng, "
-            "and Zoe Wen for brainstorming. Thank my manager Fady Ibrahim for the encouragement. Thank my PhD "
-            "advisor Kevin J. Edgar, my postdoc advisor Lynne Taylor, and my mentor Tze Ning Hiew for me to "
-            "start work on amorphous solid dispersion.")
-
-    st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #8AA3AD'>Built with Streamlit & Gemini · Data: EMA EPAR</div>",
-                unsafe_allow_html=True)
+st.markdown('<div class="eyebrow" style="color:#426b89">EMA / CMC KNOWLEDGE</div>',unsafe_allow_html=True)
+st.radio('Explore',['Overview','CMC database','Evidence search','Benchmark & validation'],horizontal=True,key='section',label_visibility='collapsed')
+{'Overview':overview,'CMC database':cmc_database,'Evidence search':evidence_search,'Benchmark & validation':benchmark_view}[st.session_state['section']]()
+st.divider();st.caption('Public EMA regulatory evidence · Corpus snapshot 2026-09-20 · Separate reported facts, interpretations and missing information.')
