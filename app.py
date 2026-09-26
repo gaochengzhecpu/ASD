@@ -1,5 +1,6 @@
 """English CMC explorer. Retrieval only; no runtime model API."""
 from collections import Counter
+from html import escape
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -8,19 +9,60 @@ from bundle import EVIDENCE_ROOT
 from data_access import load_json, citation, safe_csv, FIELD_LABELS, GROUPS
 from presentation import (assessment, rationale, basis, product_row, formulation_row,
     english_fields, english_value, entity_name, comparison_rows, field_text,
-    OMISSIONS, FORMULATION, STATUS, CJK, ingredient)
+    OMISSIONS, FORMULATION, STATUS, CJK, ingredient, carrier_review)
 
 st.set_page_config(page_title='EMA Oral ASD Formulations',page_icon='💊',layout='wide')
 st.markdown('''<style>
-.block-container{max-width:1480px;padding-top:2.5rem;padding-bottom:3rem}
-h1,h2,h3{letter-spacing:-.025em}
-.hero{background:linear-gradient(115deg,#102b4b,#214e78 68%,#266d80);padding:28px 34px;border-radius:16px;color:white;margin-bottom:22px}
-.hero h1{font-size:2.2rem;color:white!important;margin:6px 0 10px}
-.hero p{color:#d6e4ef;margin:0;max-width:900px}
-.eyebrow{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;font-weight:700;color:#a9dfce}
-.stMetric{background:#f1f6fa;border:1px solid #dce6ee;border-radius:12px;padding:14px 20px}
-[data-testid="stMetricValue"]{color:#153f65}
-div[data-testid="stExpander"]{border-color:#dce6ee}
+.block-container{max-width:1480px;padding:2.5rem 3rem 3rem}
+h1,h2,h3{letter-spacing:-.035em;color:#172e3c}
+h1{font-weight:650!important} h3{font-size:1.35rem!important}
+[data-testid="stHeader"]{background:transparent}
+.masthead{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:-.03em;font-size:1.18rem;color:#183a40}
+.brandmark{display:grid;place-items:center;background:#173d43;color:#fff;width:40px;height:40px;border-radius:11px;font-size:.8rem;letter-spacing:.05em}
+.masthead-note{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#617477;text-align:right}
+.st-key-section [role="radiogroup"]{gap:6px;padding:6px;background:#e9efed;border:1px solid #dce5e1;border-radius:13px;width:fit-content;margin-bottom:12px}
+.st-key-section [data-baseweb="radio"],.st-key-section [data-testid="stRadioOption"]{margin:0;padding:9px 16px;border-radius:9px;color:#52656a;transition:background .15s}
+.st-key-section [data-baseweb="radio"]>div:first-child{display:none}
+.st-key-section [data-testid="stRadioOption"]>div>div:first-child{display:none}
+.st-key-section [data-baseweb="radio"]:has(input:checked),.st-key-section [data-testid="stRadioOption"][data-selected="true"]{background:#fff;color:#124c46;box-shadow:0 2px 5px #193c3612}
+.st-key-section [data-baseweb="radio"]:has(input:focus-visible),.st-key-section [data-testid="stRadioOption"]:has(input:focus-visible){outline:2px solid #0b7a68;outline-offset:2px}
+.st-key-section [data-baseweb="radio"] p,.st-key-section [data-testid="stRadioOption"] p{font-weight:600;font-size:.87rem}
+.hero{position:relative;overflow:hidden;background:#153e43;padding:25px 32px;border-radius:18px;color:white;margin-bottom:4px}
+.hero:after{content:'';position:absolute;width:280px;height:280px;border:1px solid #ffffff16;border-radius:50%;right:-95px;top:-150px;box-shadow:0 0 0 55px #ffffff04,0 0 0 110px #ffffff04;pointer-events:none}
+.hero h1{font-size:2.3rem;line-height:1.12;color:#fff!important;margin:10px 0 12px;padding:0;max-width:820px;letter-spacing:-.04em}
+.hero p{color:#c3dad7;margin:0;max-width:820px;font-size:.95rem;line-height:1.65}
+.eyebrow{font-size:.66rem;letter-spacing:.17em;text-transform:uppercase;font-weight:700;color:#a3d4c2}
+.section-intro{padding:16px 0 8px}
+.section-intro .eyebrow{color:#0c7563}
+.section-intro h1{font-size:2.25rem;padding:8px 0 10px;margin:0}
+.section-intro p{color:#52686e;margin:0;max-width:850px}
+[data-testid="stMetric"]{background:#fff;border:1px solid #dce5e1;border-radius:13px;padding:12px 22px;border-top:3px solid #7cb7a5}
+[data-testid="stMetricValue"]{color:#164f49;font-size:2.15rem;font-weight:600;letter-spacing:-.045em}
+[data-testid="stMetricLabel"] p{font-size:.8rem;color:#52666b}
+[data-testid="stVerticalBlockBorderWrapper"]>div{border-radius:14px!important;border-color:#dce5e1!important;background:#fff}
+[data-testid="stDataFrame"]{border-radius:10px;overflow:hidden}
+[data-testid="stForm"]{background:#fff;border-color:#dce5e1;border-radius:14px;padding:24px}
+[data-testid="stExpander"]{background:#fff;border-color:#dce5e1;border-radius:11px}
+[data-baseweb="tab-list"]{gap:22px;border-bottom:1px solid #dce5e1}
+[data-baseweb="tab"]{padding:12px 1px;font-weight:600}
+button[kind="secondary"],button[kind="primary"]{border-radius:9px}
+button[kind="primary"]{background:#0c7563;border-color:#0c7563}
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] p{color:#526b72!important}
+.detail-heading{margin-top:18px;padding-top:22px;border-top:1px solid #dce5e1;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.detail-heading h3{font-size:1.8rem!important;margin:6px 0;padding:0}
+.detail-heading .eyebrow{color:#0c7563}
+.status-pill{font-size:.75rem;font-weight:600;white-space:nowrap;background:#e0f0e8;color:#175844;padding:7px 12px;border-radius:20px}
+.status-neutral{background:#e9eef1;color:#445965}.status-pending{background:#fff1db;color:#7b5622}
+.fact-card{background:#fff;border:1px solid #dce5e1;border-radius:13px;padding:20px 22px;min-height:118px;height:100%}
+.fact-label{color:#60747a;text-transform:uppercase;letter-spacing:.11em;font-size:.66rem;font-weight:700}
+.fact-value{color:#1a4346;font-size:1.1rem;font-weight:600;margin-top:9px;line-height:1.5}
+.fact-note{font-size:.77rem;color:#61777d;margin-top:8px}
+.search-flow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 14px;font-size:.82rem;color:#53696f}
+.search-flow span{background:#fff;border:1px solid #dce5e1;border-radius:8px;padding:9px 14px}
+.search-flow .cost{background:#e0f0e8;color:#175844;border-color:#c7e3d5}
+.site-footer{display:flex;justify-content:space-between;gap:16px;font-size:.75rem;color:#60747a;padding:10px 0}
+@media(max-width:760px){.block-container{padding:2rem 1rem}.hero{padding:25px}.hero h1{font-size:2rem}.masthead-note{display:none}.st-key-section [data-baseweb="radio"]{padding:7px 10px}.st-key-section [role="radiogroup"]{width:100%}.fact-card{min-height:auto}.site-footer{display:block}}
 </style>''',unsafe_allow_html=True)
 
 @st.cache_data
@@ -36,6 +78,22 @@ def table(rows,**kw):
 
 def csv_button(label,rows,filename,key):
     st.download_button(label,safe_csv(rows if isinstance(rows,pd.DataFrame) else pd.DataFrame(rows)),file_name=filename,mime='text/csv',key=key)
+
+def page_intro(kicker,title,description):
+    st.markdown(f'<div class="section-intro"><div class="eyebrow">{escape(kicker)}</div><h1>{escape(title)}</h1><p>{escape(description)}</p></div>',unsafe_allow_html=True)
+
+def fact_card(label,value,note=''):
+    st.markdown(f'<div class="fact-card"><div class="fact-label">{escape(label)}</div><div class="fact-value">{escape(value)}</div><div class="fact-note">{escape(note)}</div></div>',unsafe_allow_html=True)
+
+def carrier_panel(p):
+    review=carrier_review(p)
+    left,right=st.columns(2)
+    with left:fact_card('ASD polymer / carrier',review['ASD carrier'],review['Carrier basis']+' · saved CMC evidence')
+    with right:fact_card('ASD preparation',FORMULATION[p['product']][1],'Intermediate manufacture')
+    with st.expander('Why this carrier?'):
+        st.write(review['Carrier rationale'])
+        st.caption('CMC crop pages: '+review['Carrier CMC pages'])
+        st.text(review['Carrier source excerpts'])
 
 def field_source(p,f):
     value,origin=english_value(p,f)
@@ -56,23 +114,29 @@ def source_page(ident):
 
 def product_detail(p,prefix):
     name=p['product'];m=p['metadata']
-    st.subheader(name)
+    decision=assessment(p)
+    cls='status-pending' if decision=='Insufficient evidence' else ('status-neutral' if decision=='Non-ASD' else '')
+    st.markdown(f'<div class="detail-heading"><div><div class="eyebrow">Formulation profile</div><h3>{escape(name)}</h3></div><span class="status-pill {cls}">ASD assessment: {escape(decision)}</span></div>',unsafe_allow_html=True)
     st.caption(f"{ingredient(p)} · {m.get('holder','')} · First authorised {m['first_approval_date']}")
-    st.markdown('**ASD assessment: '+assessment(p)+'**');st.write(rationale(p))
+    st.write(rationale(p))
     if name in OMISSIONS:st.info('Potential literature omission: not in the paper-mapped ASD list. See Literature comparison for evidence and scope.')
     st.link_button('Official EMA product page',m['ema_url'])
     if not p['fields']:return
+    if decision=='ASD':carrier_panel(p)
     tabs=st.tabs(['Drug product','Drug substance','ASD formulation','Structures','Source pages'])
     groups=[GROUPS['Drug product'],GROUPS['Drug substance'],[k for k in GROUPS['ASD & loading'] if k!='asd']]
     for tab,keys in zip(tabs,groups):
         with tab:
             fs=[f for f in p['fields'] if f['key'] in keys]
             rows=[]
+            if keys==groups[-1] and decision=='ASD':
+                review=carrier_review(p)
+                rows.append({'Property':'ASD carrier / polymer','Component':'Product-level review','Value':review['ASD carrier'],'Wording':review['Carrier basis']})
             for f in fs:
+                if decision=='ASD' and f['key']=='asd_carrier':continue
                 val,origin=english_value(p,f)
                 rows.append({'Property':FIELD_LABELS[f['key']],'Component':entity_name(f.get('entity','')),'Value':val,'Wording':origin})
             table(rows)
-            if keys==groups[-1] and name in FORMULATION:st.caption('Carrier: '+FORMULATION[name][0]+'. Preparation: '+FORMULATION[name][1]+'.')
             with st.expander('Evidence and source excerpts'):
                 for f in fs:
                     ent=entity_name(f.get('entity',''))
@@ -88,21 +152,26 @@ def product_detail(p,prefix):
         if pages:source_page(st.selectbox('CMC page',[r['id'] for r in pages],format_func=lambda x:'Page '+x.split(':p')[-1],key=prefix+'_page'))
         st.caption('Assessment applies to the saved CMC formulation. First authorisation year is not the introduction date of every later formulation.')
     csv_button('Download product CMC fields',english_fields(p),name+'_CMC.csv',prefix+'_csv')
+    if decision=='ASD':csv_button('Download formulation assessment',[formulation_row(p)],name+'_formulation_review.csv',prefix+'_review_csv')
 
 def asd_view():
     st.markdown('''<div class="hero"><div class="eyebrow">Public EMA evidence · Formulation science</div>
     <h1>EMA Oral ASD Formulations</h1><p>Amorphous solid dispersion formulations, their carriers, manufacturing processes and drug-product properties.</p></div>''',unsafe_allow_html=True)
     for col,label,value in zip(st.columns(3),['Products assessed as ASD','Oral products in the study','Products with CMC records'],[len(asd_products),len(products),sum(bool(p['fields']) for p in products)]):col.metric(label,value)
     st.caption('January 2010–20 September 2026 · Selected centrally authorised oral products; generics, biosimilars and hybrids excluded. ASD counts are review assessments, including interpretations.')
-    a,b=st.columns([2,1]);term=a.text_input('Search ASD product, ingredient, carrier or company',key='asd_search')
-    view=b.selectbox('Show',['Formulation summary','Manufacturing & excipients','Drug loading'],key='asd_view')
-    subset=asd_table.copy()
-    if term:subset=subset[subset.astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)]
-    cols={'Formulation summary':['Product','Active ingredient','Year','Dosage form','Strength','ASD carrier','ASD preparation','Literature note'],
-          'Manufacturing & excipients':['Product','Dosage form','DP manufacturing','Excipients'],
-          'Drug loading':['Product','ASD carrier','API : carrier ratio','API fraction in ASD','API fraction in DP']}[view]
-    st.subheader('ASD drug-product database');st.caption(f'{len(subset)} products · Strength per tablet/capsule unless stated. FDC = fixed-dose combination. Candidate carriers are explicitly marked.')
-    table(subset[cols],height=420);csv_button('Download all ASD formulation columns',subset,'EMA_ASD_formulations.csv','asd_csv')
+    with st.container(border=True):
+        st.subheader('ASD drug-product database')
+        a,b=st.columns([2,1]);term=a.text_input('Search ASD product, ingredient, carrier or company',key='asd_search',placeholder='Try copovidone, Gavreto or Vertex…')
+        view=b.selectbox('Show',['Formulation summary','Manufacturing & excipients','Drug loading'],key='asd_view')
+        subset=asd_table.copy()
+        search_cols=['Product','Active ingredient','ASD carrier','Company']
+        if term:subset=subset[subset[search_cols].astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)]
+        cols={'Formulation summary':['Product','ASD carrier','Carrier basis','ASD preparation','Dosage form','Strength','Active ingredient','Year','Literature note'],
+              'Manufacturing & excipients':['Product','Dosage form','DP manufacturing','Excipients'],
+              'Drug loading':['Product','ASD carrier','API : carrier ratio','API fraction in ASD','API fraction in DP']}[view]
+        st.caption(f"{len(subset)} {'product' if len(subset)==1 else 'products'} · Inferred = carrier assignment from saved CMC evidence. Strength is per unit unless stated; FDC = fixed-dose combination.")
+        table(subset[cols],height=min(395,36*(len(subset)+1)+3),column_config={'Product':st.column_config.TextColumn(width='small'),'ASD carrier':st.column_config.TextColumn(width='medium'),'Carrier basis':st.column_config.TextColumn(width='small'),'ASD preparation':st.column_config.TextColumn(width='medium')})
+        csv_button('Download all ASD formulation columns',subset,'EMA_ASD_formulations.csv','asd_csv')
     if not subset.empty:product_detail(by_name[st.selectbox('Inspect an ASD product',sorted(subset['Product']),key='asd_product')],'asd_detail')
     with st.expander('ASD products by first authorisation year'):
         counts=asd_table.groupby('Year').size().reset_index(name='Products')
@@ -110,7 +179,7 @@ def asd_view():
         fig.update_layout(height=310,margin=dict(t=10,l=10,b=10,r=10),plot_bgcolor='rgba(0,0,0,0)');st.plotly_chart(fig,width='stretch')
 
 def all_medicines():
-    st.title('All medicines');st.write('One assessment per product, with its CMC properties and source documents.')
+    page_intro('Product library','Oral product database','Explore the 351 oral products in this study, with structured drug-substance and drug-product properties.')
     a,b=st.columns([2,1]);term=a.text_input('Search product, ingredient or company',key='db_search')
     status=b.selectbox('ASD assessment',['All','ASD','Non-ASD','Insufficient evidence'],key='db_status')
     subset=summary.copy()
@@ -133,8 +202,9 @@ def matching_field(p,f):
     return matches[0] if matches else f
 
 def evidence_search():
-    st.title('CMC evidence search');st.write('Find formulation facts and the CMC passages that support them.')
-    st.caption('The retrieval component of the RAG workflow. This website searches saved evidence; it does not generate new AI answers or call a paid model API.')
+    page_intro('Evidence workspace','CMC evidence search','Search the saved formulation records and read the CMC passages behind each finding.')
+    st.markdown('<div class="search-flow"><span>Your question</span> → <span>Retrieve CMC evidence</span> → <span>Read source passages</span><span class="cost">No model API calls</span></div>',unsafe_allow_html=True)
+    st.caption('This is the retrieval step of RAG, not a live AI chatbot. Search runs on the stored index with no model API usage; it does not generate new answers.')
     mode=st.radio('Search mode',['Question search','Complete catalog','Worked examples'],horizontal=True,key='search_mode')
     if mode=='Worked examples':
         examples={
@@ -182,6 +252,7 @@ def evidence_search():
     st.subheader('Retrieved evidence');st.caption(result['question'])
     for p in result['target_products']:
         record=by_name[p['product']];st.markdown('**'+p['product']+' — '+assessment(record)+'**');st.write(rationale(record))
+        if assessment(record)=='ASD' and any(f['key']=='asd_carrier' for f in result['facts']):carrier_panel(record)
     for warning in result['warnings']:
         if 'separate saved-record interpretation' not in warning:st.info(warning.replace('catalog --after / --before','explicit date filters in an offline catalog analysis'))
     a,b=st.columns([1,1.2])
@@ -199,7 +270,7 @@ def evidence_search():
                 st.link_button('Official EMA source',by_name[ctx['product']]['metadata']['ema_url'])
 
 def literature_view():
-    st.title('Literature comparison');st.write('How our formulation review compares with the published FDA ASD list.')
+    page_intro('Reference comparison','Literature comparison','Where the CMC review agrees with the published FDA ASD list — and where the formulations or findings differ.')
     st.link_button('Moseson et al. (2024), including Tze Ning Hiew','https://doi.org/10.1016/j.ijpx.2024.100259')
     st.markdown('''**Comparison set:** 259 EMA products whose matched oral formulations were also FDA-approved in 2012–2023, the period covered by the paper. Matching uses formulation rather than brand name or indication.
 
@@ -233,16 +304,13 @@ The paper lists ASD formulations. **Not listed does not prove non-ASD.** Unliste
         st.caption('Different document scopes and historical inputs make this an exploratory comparison, not a controlled model ranking. The current review also saw the literature comparison and is not a blind test.')
 
 def about():
-    st.title('About this project')
+    page_intro('Project & people','About this project','A formulation research project built on public regulatory evidence.')
     st.markdown('''### Data and assessment
 EMA medicines records and Article 57 route information define the selected oral cohort. EPAR CMC sections provide the formulation evidence. This release contains 351 products and 350 CMC records, with a source snapshot of 20 September 2026.
 
 The site consolidates the completed Codex review into one product assessment: **ASD**, **Non-ASD** or **Insufficient evidence**. ASD covers a drug dispersed in an organic carrier matrix in amorphous form, including solid solutions and cyclodextrin-based dispersions. Amorphous silica adsorbates are outside this category. A pure amorphous API or a polymer excipient alone is not sufficient.
 
-The 39 ASD assessments include interpretations of the manufacturing record; they are not 39 independently confirmed experimental findings. Carrier identity, process and drug loading remain undisclosed where the record does not establish them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
-
-### English presentation
-English extracted values are retained, with concise English summaries for the ASD table. Where an extraction was written in Chinese, its original English CMC quotation is displayed and marked **Source wording**, rather than silently translating or guessing. These excerpts can be less complete than the original narrative. Original records remain in the project archive.
+The 39 ASD assessments include interpretations of the manufacturing record; they are not 39 independently confirmed experimental findings. Carrier assignments are marked **Reported** or **Inferred**, with their supporting CMC excerpts. Process details and quantitative drug loading are retained only where the record supports them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
 
 ### Evidence search and RAG
 BM25 text retrieval is combined with product and property matching. Codex was used outside the public website to answer questions from retrieved evidence. The website provides the retrieval step and worked examples; it has no live model-generation backend and makes no model API calls.
@@ -257,8 +325,9 @@ Earlier website versions are available in GitHub’s commit history. Their count
     st.link_button('GitHub version history','https://github.com/gaochengzhecpu/ASD/commits/main/')
     st.caption('Independent research by Chengzhe Gao using public regulatory evidence. Not an EMA service or clinical dosing resource.')
 
-sections={'ASD formulations':asd_view,'All medicines':all_medicines,'CMC evidence search':evidence_search,'Literature comparison':literature_view,'About':about}
+st.markdown('<div class="masthead"><div class="brand"><span class="brandmark">CMC</span>Formulation Atlas</div><div class="masthead-note">Public EMA evidence<br>Research by Chengzhe Gao</div></div>',unsafe_allow_html=True)
+sections={'ASD formulations':asd_view,'Oral product database':all_medicines,'CMC evidence search':evidence_search,'Literature comparison':literature_view,'About':about}
 if st.session_state.get('section') not in sections:st.session_state['section']='ASD formulations'
 st.radio('Explore',list(sections),horizontal=True,key='section',label_visibility='collapsed')
 sections[st.session_state['section']]()
-st.divider();st.caption('Chengzhe Gao · Public EMA CMC evidence · Data snapshot: 20 September 2026')
+st.divider();st.markdown('<div class="site-footer"><span>Chengzhe Gao · Formulation Atlas</span><span>Public EMA CMC evidence · Data snapshot: 20 September 2026</span></div>',unsafe_allow_html=True)

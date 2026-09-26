@@ -10,7 +10,7 @@ from data_access import load_json,citation,field_rows,safe_csv
 import pandas as pd
 from streamlit.testing.v1 import AppTest
 from presentation import (assessment, english_fields, formulation_row, comparison_rows,
-    product_row, english_value, OMISSIONS, CJK)
+    product_row, english_value, OMISSIONS, CJK, carrier_review)
 
 class DataTests(unittest.TestCase):
     def test_cohort_and_labels(self):
@@ -95,6 +95,21 @@ class PresentationTests(unittest.TestCase):
         rows=[formulation_row(p) for p in ps if assessment(p)=='ASD']
         self.assertEqual(len(rows),39);self.assertIsNone(CJK.search(str(rows)))
         self.assertTrue(all('DP manufacturing' in r and 'Excipients' in r for r in rows))
+    def test_carrier_interpretations_preserve_source_uncertainty(self):
+        ps={p['product']:p for p in load_json('products.json')}
+        for name in ['Maviret','Braftovi','Kaftrio','Gavreto','Sunlenca','Tibsovo','Palsonify']:
+            review=carrier_review(ps[name])
+            self.assertEqual(review['Carrier basis'],'Inferred')
+            self.assertTrue(review['Carrier source excerpts'])
+            self.assertTrue(review['Carrier CMC pages'])
+            self.assertNotIn('Not disclosed',review['ASD carrier'])
+        self.assertEqual(carrier_review(ps['Gavreto'])['ASD carrier'],'HPMC')
+        self.assertTrue(all(f['value'] is None for f in ps['Gavreto']['fields'] if f['key']=='asd_carrier'))
+        self.assertNotIn('poloxamer',carrier_review(ps['Sunlenca'])['ASD carrier'].lower())
+        self.assertIn('second co-sprayed excipient is not identified',carrier_review(ps['Sunlenca'])['Carrier rationale'])
+        self.assertIn('assignments remain unresolved',carrier_review(ps['Kaftrio'])['Carrier rationale'])
+        self.assertEqual(carrier_review(ps['Sotyktu'])['Carrier basis'],'Reported')
+
     def test_reference_disagreements_are_not_silently_relabelled(self):
         rows=comparison_rows(load_json('products.json'),load_json('benchmark.json'))
         counts=Counter(r['Comparison'] for r in rows)
@@ -110,7 +125,7 @@ class UITests(unittest.TestCase):
     def select(self,label):return next(x for x in self.a.selectbox if x.label==label)
     def button(self,label):return next(x for x in self.a.button if x.label==label)
     def test_database_filter_empty_missing_and_images(self):
-        self.route('All medicines')
+        self.route('Oral product database')
         self.a.text_input(key='db_search').set_value('Etcamah').run();self.good()
         self.assertTrue(any('No public CMC source' in x.value for x in self.a.markdown))
         self.a.text_input(key='db_search').set_value('absent[*').run();self.good()
@@ -140,13 +155,13 @@ class UITests(unittest.TestCase):
         self.route('About')
         self.assertTrue(any('Xiuli Li' in x.value for x in self.a.markdown))
     def test_english_ui_and_removed_sections(self):
-        for section in ['ASD formulations','All medicines','CMC evidence search','Literature comparison','About']:
+        for section in ['ASD formulations','Oral product database','CMC evidence search','Literature comparison','About']:
             self.route(section)
             for elements in [self.a.markdown,self.a.caption,self.a.text,self.a.info,self.a.warning]:
                 for element in elements:self.assertIsNone(CJK.search(element.value),section)
             for frame in self.a.dataframe:self.assertIsNone(CJK.search(frame.value.to_csv(index=False)),section)
         text=(ROOT/'app.py').read_text(encoding='utf8')
-        for phrase in ['14 products added','What changed from','Original extraction label','Working classification']:
+        for phrase in ['14 products added','What changed from','Original extraction label','Working classification','### English presentation']:
             self.assertNotIn(phrase,text)
 
 if __name__=='__main__':unittest.main(verbosity=2)

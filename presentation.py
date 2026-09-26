@@ -125,6 +125,41 @@ OVERRIDES = {
  ('Cenrifki','dose_regimen'): 'QTPP development target: once daily. Tablet count per dose and dose-adjustment regimen are not specified.',
 }
 
+# Product-level carrier interpretations from the already saved CMC records.
+# Do not overwrite the original extraction or assign undisclosed FDC polymers to APIs.
+CARRIER_REVIEW = {
+ 'Maviret': ('Copovidone (K28)', 'The tablet core contains copovidone K28 and each API has a separate ASD intermediate. Copovidone is inferred as the matrix polymer; the record does not assign the excipients to each intermediate.'),
+ 'Braftovi': ('Copovidone', 'Copovidone is listed in the capsule contents alongside poloxamer 188 and a functional intermediate is described. Copovidone is the inferred matrix polymer; poloxamer 188 is not independently assigned as a carrier.'),
+ 'Kaftrio': ('HPMC / HPMCAS', 'The core contains HPMC and HPMCAS, and the ivacaftor and tezacaftor spray-dried dispersions use stabilising polymers. These are inferred carrier candidates; the individual API-to-polymer assignments remain unresolved.'),
+ 'Gavreto': ('HPMC', 'Hypromellose is listed in the capsule contents, separately from the capsule shell, and an amorphous spray-dried dispersion is reported. HPMC is therefore inferred as the matrix polymer.'),
+ 'Sunlenca': ('Copovidone', 'Copovidone is listed in the tablet core and lenacapavir is spray-dried with two excipients. Copovidone is the inferred polymer; the second co-sprayed excipient is not identified. No assignment is borrowed from Yeytuo.'),
+ 'Tibsovo': ('HPMCAS', 'HPMCAS is listed in the core, distinct from HPMC in the film coat. It is the inferred carrier for the functional intermediate; both the carrier role and the ASD phase remain interpretations.'),
+ 'Palsonify': ('Copovidone', 'Copovidone is listed in the core, while HPMC is in the film coat. Together with the methanolic spray-drying route, this supports copovidone as the inferred matrix polymer.'),
+}
+
+
+def carrier_review(p):
+    """Return one readable assignment, its uncertainty and the saved source trail."""
+    name = p['product']
+    original = FORMULATION[name][0]
+    if name in CARRIER_REVIEW:
+        polymer, note = CARRIER_REVIEW[name]
+        evidence = 'Inferred'
+    else:
+        polymer = original.replace(' (candidate)', '').replace('(candidate for ', '(')
+        polymer = polymer.replace('(candidates; ', '(').replace('(candidate; ', '(')
+        inferred = 'candidate' in original.lower() or any(
+            f['key']=='asd_carrier' and f['status']=='interpretation' for f in p['fields'])
+        evidence = 'Inferred' if inferred else 'Reported'
+        note = ('Carrier role is inferred from the saved formulation and excipient evidence. '
+                'Presence in the formulation alone does not confirm co-dispersion; any unresolved component assignment is retained.'
+                if inferred else 'Carrier identity is described in the saved CMC extraction. See the source excerpts for component scope.')
+    source_fields = [f for f in p['fields'] if f['key'] in ('asd_carrier', 'excipients', 'asd_process')]
+    excerpts = list(dict.fromkeys(e['quote'] for f in source_fields for e in f.get('evidence', []) if e.get('quote')))
+    pages = sorted({e['page'] for f in source_fields for e in f.get('evidence', [])})
+    return {'ASD carrier': polymer, 'Carrier basis': evidence, 'Carrier rationale': note,
+            'Carrier CMC pages': ', '.join(map(str, pages)), 'Carrier source excerpts': '\n'.join(excerpts)}
+
 SHORT_DP = {
  'Votubia': ('Immediate-release tablet','2.5, 5, 10 mg'),
  'Incivo': ('Immediate-release film-coated tablet','375 mg'),
@@ -231,8 +266,8 @@ def product_row(p):
 
 def formulation_row(p):
     r=product_row(p)
-    carrier,process=FORMULATION[p['product']]
-    r.update({'Strength':SHORT_DP[p['product']][1],'ASD carrier':carrier,'ASD preparation':process,
+    _,process=FORMULATION[p['product']]
+    r.update({'Strength':SHORT_DP[p['product']][1],**carrier_review(p),'ASD preparation':process,
               'DP manufacturing':field_text(p,'dp_process'),'Excipients':field_text(p,'excipients'),
               'API : carrier ratio':field_text(p,'drug_carrier_ratio'),
               'API fraction in ASD':field_text(p,'api_fraction_asd'),

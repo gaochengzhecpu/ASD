@@ -10,7 +10,7 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
 
 - ASD formulations: 39 review assessments, with dosage form, strength, carrier,
   process, excipients and distinct drug-loading denominators.
-- All medicines: one ASD / Non-ASD / Insufficient evidence assessment, product
+- Oral product database: one ASD / Non-ASD / Insufficient evidence assessment, product
   details, source pages and English CSV exports.
 - CMC evidence search: BM25 plus product/property retrieval and worked examples.
   This is the retrieval component of RAG, without live generation.
@@ -19,7 +19,7 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
 - About: scope, limitations, acknowledgements and version history.
 
 The single assessment consolidates the completed Codex record review; it is not
-an independent or blind evaluation. Candidate carriers stay qualified. Amorphous
+an independent or blind evaluation. Carrier assignments are labelled Reported or Inferred. The inferred carrier panel includes saved source excerpts and a rationale; original extraction values are unchanged. Amorphous
 silica adsorbates are excluded from the organic-matrix ASD category.
 
 ## Evidence and English display
