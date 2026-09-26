@@ -80,7 +80,7 @@ FORMULATION = {
  'Paxlovid': ('Ritonavir: copovidone (candidate)', 'Ritonavir: hot-melt extrusion'),
  'Zokinvy': ('Povidone K30', 'Spray drying; secondary tray drying'),
  'Sunlenca': ('Two excipients; identities not disclosed in this record', 'Spray drying'),
- 'Sotyktu': ('HPMCAS, H grade', 'Spray drying from acetone / water; secondary drying'),
+ 'Sotyktu': ('HPMCAS, H grade', 'Spray drying from acetone / water'),
  'Tibsovo': ('Not disclosed', 'Not disclosed'),
  'Aquipta': ('PVP/VA copolymer (candidate)', 'Hot-melt extrusion'),
  'Jaypirca': ('HPMCAS', 'Spray drying; secondary drying'),
@@ -194,7 +194,7 @@ def english_fields(p):
     for f in p['fields']:
         if f['key']=='asd':continue  # One product assessment is presented separately.
         value,origin=english_value(p,f)
-        rows.append({'Product':p['product'],'Component':entity_name(f.get('entity','')),
+        rows.append({'Product':p['product'],'ASD assessment':assessment(p),'Component':entity_name(f.get('entity','')),
           'Field':FIELD_LABELS[f['key']],'Value':value,'Evidence':STATUS.get(f['status'],f['status']),
           'Wording':origin,'CMC pages':', '.join(str(e['page']) for e in f.get('evidence',[])),
           'Source excerpts':'\n'.join(e.get('quote','') for e in f.get('evidence',[])),
