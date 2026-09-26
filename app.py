@@ -8,7 +8,7 @@ from bundle import EVIDENCE_ROOT
 from data_access import load_json, citation, safe_csv, FIELD_LABELS, GROUPS
 from presentation import (assessment, rationale, basis, product_row, formulation_row,
     english_fields, english_value, entity_name, comparison_rows, field_text,
-    OMISSIONS, FORMULATION, STATUS, CJK)
+    OMISSIONS, FORMULATION, STATUS, CJK, ingredient)
 
 st.set_page_config(page_title='EMA Oral ASD Formulations',page_icon='💊',layout='wide')
 st.markdown('''<style>
@@ -57,7 +57,7 @@ def source_page(ident):
 def product_detail(p,prefix):
     name=p['product'];m=p['metadata']
     st.subheader(name)
-    st.caption(f"{m.get('inn') or m.get('active_substance','')} · {m.get('holder','')} · First authorised {m['first_approval_date']}")
+    st.caption(f"{ingredient(p)} · {m.get('holder','')} · First authorised {m['first_approval_date']}")
     st.markdown('**ASD assessment: '+assessment(p)+'**');st.write(rationale(p))
     if name in OMISSIONS:st.info('Potential literature omission: not in the paper-mapped ASD list. See Literature comparison for evidence and scope.')
     st.link_button('Official EMA product page',m['ema_url'])
@@ -101,7 +101,7 @@ def asd_view():
     cols={'Formulation summary':['Product','Active ingredient','Year','Dosage form','Strength','ASD carrier','ASD preparation','Literature note'],
           'Manufacturing & excipients':['Product','Dosage form','DP manufacturing','Excipients'],
           'Drug loading':['Product','ASD carrier','API : carrier ratio','API fraction in ASD','API fraction in DP']}[view]
-    st.subheader('ASD drug-product database');st.caption(f'{len(subset)} products · Candidate carriers are explicitly marked. Undisclosed values remain unfilled.')
+    st.subheader('ASD drug-product database');st.caption(f'{len(subset)} products · Strength per tablet/capsule unless stated. FDC = fixed-dose combination. Candidate carriers are explicitly marked.')
     table(subset[cols],height=420);csv_button('Download all ASD formulation columns',subset,'EMA_ASD_formulations.csv','asd_csv')
     if not subset.empty:product_detail(by_name[st.selectbox('Inspect an ASD product',sorted(subset['Product']),key='asd_product')],'asd_detail')
     with st.expander('ASD products by first authorisation year'):
@@ -206,7 +206,7 @@ def literature_view():
 The paper lists ASD formulations. **Not listed does not prove non-ASD.** Unlisted products were initially treated as negative to compare screening methods; the review below separates possible reference omissions and different formulations.''')
     rows=comparison_rows(products,benchmark);frame=pd.DataFrame(rows);counts=Counter(r['Comparison'] for r in rows)
     for col,label,n in zip(st.columns(3),['ASD in both','Potential literature omissions','Different formulations'],[counts['ASD in both'],counts['Potential literature omission'],counts['Different formulation reviewed']]):col.metric(label,n)
-    st.caption('29 EMA product/formulation matches to the paper ASD list: 27 agree with our review; 2 involve different formulations. Of 230 unlisted products, 5 are assessed as ASD, 220 as non-ASD and 5 remain unresolved. Vaxchora and Palforzia are included in the overlap but are outside the paper’s NDA scope.')
+    st.caption(f"29 EMA product/formulation matches to the paper ASD list: 27 agree with our review; 2 involve different formulations. Of 230 unlisted products, 5 are assessed as ASD, {counts['Not listed; review non-ASD']} as non-ASD and {counts['CMC evidence unresolved']} remain unresolved. Vaxchora and Palforzia are included in the overlap but are outside the paper’s NDA scope.")
     st.subheader('Five potential literature omissions')
     st.write('ASD in the saved CMC evidence, but absent from the paper-mapped list. Literature-scope checking is still needed before calling these confirmed omissions.')
     evidence=[]

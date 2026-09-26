@@ -90,7 +90,8 @@ class PresentationTests(unittest.TestCase):
                 self.assertIsNone(CJK.search(value),p['product'])
                 if origin=='Source wording':
                     self.assertTrue(all(e['quote'].strip() in value for e in f['evidence'] if e['quote'].strip()))
-        self.assertEqual(Counter(assessment(p) for p in ps),{'ASD':39,'Non-ASD':304,'Insufficient evidence':8})
+        self.assertEqual(Counter(assessment(p) for p in ps),{'ASD':39,'Non-ASD':303,'Insufficient evidence':9})
+        self.assertEqual(assessment(next(p for p in ps if p['product']=='Evotaz')),'Insufficient evidence')
         rows=[formulation_row(p) for p in ps if assessment(p)=='ASD']
         self.assertEqual(len(rows),39);self.assertIsNone(CJK.search(str(rows)))
         self.assertTrue(all('DP manufacturing' in r and 'Excipients' in r for r in rows))
@@ -98,7 +99,7 @@ class PresentationTests(unittest.TestCase):
         rows=comparison_rows(load_json('products.json'),load_json('benchmark.json'))
         counts=Counter(r['Comparison'] for r in rows)
         self.assertEqual(counts,{'ASD in both':27,'Potential literature omission':5,
-            'Different formulation reviewed':2,'CMC evidence unresolved':5,'Not listed; review non-ASD':220})
+            'Different formulation reviewed':2,'CMC evidence unresolved':6,'Not listed; review non-ASD':219})
         self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Potential literature omission'},set(OMISSIONS))
         self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Different formulation reviewed'},{'Xtandi','Lynparza'})
 

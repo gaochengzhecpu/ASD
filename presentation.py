@@ -37,6 +37,7 @@ REASONS = {
  'Constella': 'An amorphous peptide is layered onto beads with HPMC. The record does not establish an ASD in the final drug layer.',
  'Duavive': 'The record does not resolve the dispersion structure of the lactose-diluted oestrogens or the amorphous/crystalline balance in the bazedoxifene coating.',
  'Qtrilmet': 'The final phase of saxagliptin in the active coating is not disclosed. Conclusions about the other components do not resolve this gap.',
+ 'Evotaz': 'Cobicistat is an amorphous silica adsorbate, outside the ASD category used here. The saved record also leaves the final atazanavir phase unresolved; excluding the cobicistat adsorbate does not establish a non-ASD conclusion for the entire combination.',
  'Xtandi': 'The reviewed EPAR describes the earlier liquid-filled soft capsule. The paper-mapped ASD is the later tablet: these are different formulations.',
  'Lynparza': 'The reviewed EPAR describes the earlier crystalline solid-dispersion capsule. The paper-mapped ASD is the later tablet: these are different formulations.',
  'Votubia': 'Amorphous everolimus, an HPMC solid dispersion and crystallinity controls jointly support ASD. The conclusion is an interpretation of those statements.',
@@ -124,10 +125,59 @@ OVERRIDES = {
  ('Cenrifki','dose_regimen'): 'QTPP development target: once daily. Tablet count per dose and dose-adjustment regimen are not specified.',
 }
 
+SHORT_DP = {
+ 'Votubia': ('Immediate-release tablet','2.5, 5, 10 mg'),
+ 'Incivo': ('Immediate-release film-coated tablet','375 mg'),
+ 'Zelboraf': ('Film-coated tablet','240 mg'),
+ 'Kalydeco': ('Film-coated tablet','150 mg'),
+ 'Stivarga': ('Immediate-release film-coated tablet','40 mg'),
+ 'Deltyba': ('Film-coated tablet','50 mg'),
+ 'Harvoni': ('Immediate-release FDC tablet','Ledipasvir 90 mg / sofosbuvir 400 mg'),
+ 'Viekirax': ('Immediate-release FDC tablet','Ombitasvir 12.5 mg / paritaprevir 75 mg / ritonavir 50 mg'),
+ 'Jinarc': ('Immediate-release uncoated tablet','15, 30, 45, 60, 90 mg'),
+ 'Orkambi': ('Immediate-release FDC tablet','Lumacaftor 200 mg / ivacaftor 125 mg'),
+ 'Epclusa': ('Immediate-release FDC tablet','Sofosbuvir 400 mg / velpatasvir 100 mg'),
+ 'Zepatier': ('Immediate-release FDC tablet','Elbasvir 50 mg / grazoprevir 100 mg'),
+ 'Venclyxto': ('Immediate-release film-coated tablet','10, 50, 100 mg'),
+ 'Maviret': ('Immediate-release FDC tablet','Glecaprevir 100 mg / pibrentasvir 40 mg'),
+ 'Vosevi': ('Immediate-release FDC tablet','Sofosbuvir 400 mg / velpatasvir 100 mg / voxilaprevir 100 mg'),
+ 'Braftovi': ('Immediate-release hard capsule','50, 75 mg'),
+ 'Symkevi': ('Immediate-release FDC tablet','Tezacaftor 100 mg / ivacaftor 150 mg'),
+ 'Delstrigo': ('Immediate-release bilayer FDC tablet','Doravirine 100 mg / lamivudine 300 mg / TDF 300 mg'),
+ 'Pifeltro': ('Immediate-release film-coated tablet','100 mg'),
+ 'Erleada': ('Immediate-release film-coated tablet','60 mg'),
+ 'Kaftrio': ('Immediate-release FDC tablet','Ivacaftor 75 mg / tezacaftor 50 mg / elexacaftor 100 mg'),
+ 'Tukysa': ('Immediate-release film-coated tablet','50, 150 mg'),
+ 'Gavreto': ('Immediate-release hard capsule','100 mg'),
+ 'Qinlock': ('Immediate-release uncoated tablet','50 mg'),
+ 'Tavneos': ('Immediate-release hard capsule','10 mg'),
+ 'Paxlovid': ('Co-packaged immediate-release tablets','Nirmatrelvir 150 mg; ritonavir 100 mg (separate tablets)'),
+ 'Zokinvy': ('Immediate-release hard capsule','50, 75 mg'),
+ 'Sunlenca': ('Immediate-release film-coated oral tablet','300 mg lenacapavir'),
+ 'Sotyktu': ('Immediate-release film-coated tablet','6 mg'),
+ 'Tibsovo': ('Film-coated oral tablet','250 mg'),
+ 'Aquipta': ('Immediate-release tablet','10, 60 mg'),
+ 'Jaypirca': ('Immediate-release film-coated tablet','50, 100 mg'),
+ 'Vanflyta': ('Immediate-release film-coated tablet','17.7, 26.5 mg quizartinib'),
+ 'Voydeya': ('Immediate-release film-coated tablet','50, 100 mg'),
+ 'Welireg': ('Immediate-release film-coated tablet','40 mg'),
+ 'Alyftrek': ('Immediate-release FDC tablet','D-IVA / TEZ / VNZ: 50 / 20 / 4 mg or 125 / 50 / 10 mg'),
+ 'Yeytuo': ('Immediate-release film-coated oral tablet','300 mg lenacapavir'),
+ 'Ojemda': ('Film-coated tablet; powder for oral suspension','Tablet: 100 mg; suspension: 25 mg/mL (300 mg delivered per bottle)'),
+ 'Palsonify': ('Immediate-release film-coated tablet','20, 30 mg paltusotine'),
+}
+
+def ingredient(p):
+    # Correct obvious metadata spelling using the saved component records.
+    if p['product']=='Harvoni':return 'ledipasvir / sofosbuvir'
+    if p['product']=='Vosevi':return 'sofosbuvir / velpatasvir / voxilaprevir'
+    return (p['metadata'].get('inn') or p['metadata'].get('active_substance','')).replace(';',' / ')
+
 def entity_name(value):
     return ENTITY_NAMES.get(value, value or '')
 
 def assessment(p):
+    if p['product']=='Evotaz':return 'Insufficient evidence'
     return {'ASD':'ASD','Likely ASD':'ASD','Non-ASD':'Non-ASD',
             'Likely non-ASD':'Non-ASD','Inorganic adsorbate':'Non-ASD',
             'Unresolved':'Insufficient evidence','Source unavailable':'Insufficient evidence'}[p['working_label']]
@@ -162,6 +212,8 @@ def english_value(p,f):
 def field_text(p,key):
     fs=[f for f in p['fields'] if f['key']==key]
     if not fs:return 'Not available' if not p['fields'] else 'Not reported'
+    values=list(dict.fromkeys(english_value(p,f)[0] for f in fs))
+    if len(values)==1:return values[0]
     vals=[]
     for f in fs:
         value,origin=english_value(p,f)
@@ -173,14 +225,14 @@ def field_text(p,key):
 
 def product_row(p):
     m=p['metadata']
-    return {'Product':p['product'],'Active ingredient':m.get('inn') or m.get('active_substance',''),
+    return {'Product':p['product'],'Active ingredient':ingredient(p),
             'Year':int(m['first_approval_date'][:4]),'Company':m.get('holder',''),
-            'ASD assessment':assessment(p),'Dosage form':field_text(p,'dp_form')}
+            'ASD assessment':assessment(p),'Dosage form':SHORT_DP[p['product']][0] if p['product'] in SHORT_DP else field_text(p,'dp_form')}
 
 def formulation_row(p):
     r=product_row(p)
     carrier,process=FORMULATION[p['product']]
-    r.update({'Strength':field_text(p,'strength'),'ASD carrier':carrier,'ASD preparation':process,
+    r.update({'Strength':SHORT_DP[p['product']][1],'ASD carrier':carrier,'ASD preparation':process,
               'DP manufacturing':field_text(p,'dp_process'),'Excipients':field_text(p,'excipients'),
               'API : carrier ratio':field_text(p,'drug_carrier_ratio'),
               'API fraction in ASD':field_text(p,'api_fraction_asd'),
