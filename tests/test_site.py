@@ -9,6 +9,8 @@ from bundle import EVIDENCE_ROOT
 from data_access import load_json,citation,field_rows,safe_csv
 import pandas as pd
 from streamlit.testing.v1 import AppTest
+from presentation import (assessment, english_fields, formulation_row, comparison_rows,
+    product_row, english_value, OMISSIONS, CJK)
 
 class DataTests(unittest.TestCase):
     def test_cohort_and_labels(self):
@@ -77,6 +79,29 @@ class DataTests(unittest.TestCase):
         text=safe_csv(pd.DataFrame({'value':['=1+1','plain']})).decode('utf-8-sig')
         self.assertIn("'=1+1",text)
 
+class PresentationTests(unittest.TestCase):
+    def test_all_public_values_are_english_and_traceable(self):
+        ps=load_json('products.json')
+        for p in ps:
+            self.assertIsNone(CJK.search(str(product_row(p))))
+            self.assertIsNone(CJK.search(str(english_fields(p))),p['product'])
+            for f in p['fields']:
+                value,origin=english_value(p,f)
+                self.assertIsNone(CJK.search(value),p['product'])
+                if origin=='Source wording':
+                    self.assertTrue(all(e['quote'].strip() in value for e in f['evidence'] if e['quote'].strip()))
+        self.assertEqual(Counter(assessment(p) for p in ps),{'ASD':39,'Non-ASD':304,'Insufficient evidence':8})
+        rows=[formulation_row(p) for p in ps if assessment(p)=='ASD']
+        self.assertEqual(len(rows),39);self.assertIsNone(CJK.search(str(rows)))
+        self.assertTrue(all('DP manufacturing' in r and 'Excipients' in r for r in rows))
+    def test_reference_disagreements_are_not_silently_relabelled(self):
+        rows=comparison_rows(load_json('products.json'),load_json('benchmark.json'))
+        counts=Counter(r['Comparison'] for r in rows)
+        self.assertEqual(counts,{'ASD in both':27,'Potential literature omission':5,
+            'Different formulation reviewed':2,'CMC evidence unresolved':5,'Not listed; review non-ASD':220})
+        self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Potential literature omission'},set(OMISSIONS))
+        self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Different formulation reviewed'},{'Xtandi','Lynparza'})
+
 class UITests(unittest.TestCase):
     def setUp(self):self.a=AppTest.from_file(str(ROOT/'app.py'),default_timeout=30).run();self.good()
     def good(self):self.assertEqual([e.message for e in self.a.exception],[])
@@ -84,31 +109,43 @@ class UITests(unittest.TestCase):
     def select(self,label):return next(x for x in self.a.selectbox if x.label==label)
     def button(self,label):return next(x for x in self.a.button if x.label==label)
     def test_database_filter_empty_missing_and_images(self):
-        self.button('Open CMC database').click().run();self.good()
-        self.assertEqual(self.select('Inspect a product').value,'Palsonify')
+        self.route('All medicines')
         self.a.text_input(key='db_search').set_value('Etcamah').run();self.good()
-        self.assertIn('Public CMC source unavailable',self.a.warning[0].value)
+        self.assertTrue(any('No public CMC source' in x.value for x in self.a.markdown))
         self.a.text_input(key='db_search').set_value('absent[*').run();self.good()
         self.assertTrue(any('No matching' in x.value for x in self.a.info))
         self.a.text_input(key='db_search').set_value('').run();self.good()
         self.select('Inspect a product').set_value('Jinarc').run();self.good()
-        self.assertEqual([m.value for m in self.a.metric],['Insufficient evidence','Likely ASD'])
+        self.assertTrue(any('ASD assessment: ASD' in x.value for x in self.a.markdown))
         self.select('Inspect a product').set_value('Kygevvi').run();self.good()
     def test_search_catalog_examples(self):
-        self.route('Evidence search');self.button('Retrieve evidence').click().run();self.good()
+        self.route('CMC evidence search');self.button('Find evidence').click().run();self.good()
         self.assertTrue(any('Retrieved evidence' in h.value for h in self.a.subheader))
         self.a.radio(key='search_mode').set_value('Complete catalog').run();self.good()
-        self.button('Scan complete catalog').click().run();self.good()
-        self.assertTrue(any('14 products' in h.value for h in self.a.subheader))
-        self.select('Evidence status').set_value('reported');self.button('Scan complete catalog').click().run();self.good()
-        self.assertTrue(any('7 products' in h.value for h in self.a.subheader))
-        next(x for x in self.a.text_input if 'after (exclusive' in x.label).set_value('bad-date')
-        self.button('Scan complete catalog').click().run();self.good();self.assertTrue(self.a.error)
-        self.a.radio(key='search_mode').set_value('Saved answer examples').run();self.good()
-        self.assertTrue(any('not live' in x.value for x in self.a.info))
+        self.button('Search complete catalog').click().run();self.good()
+        self.assertTrue(any('14 matching' in h.value for h in self.a.subheader))
+        self.select('Evidence').set_value('reported');self.button('Search complete catalog').click().run();self.good()
+        self.assertTrue(any('7 matching' in h.value for h in self.a.subheader))
+        self.a.radio(key='search_mode').set_value('Worked examples').run();self.good()
+        self.assertTrue(any('not a live' in x.value for x in self.a.info))
     def test_benchmark_and_navigation(self):
-        self.route('Benchmark & validation');self.good()
-        self.assertEqual(len(self.a.dataframe[0].value),3)
-        self.route('Overview');self.assertEqual([m.value for m in self.a.metric],['351','350','39','259'])
+        self.route('Literature comparison')
+        self.assertEqual([m.value for m in self.a.metric],['27','5','2'])
+        self.assertEqual(len(self.a.dataframe[0].value),5)
+        self.route('ASD formulations');self.assertEqual([m.value for m in self.a.metric],['39','351','350'])
+        self.assertEqual(len(self.a.dataframe[0].value),39)
+        self.select('Show').set_value('Manufacturing & excipients').run();self.good()
+        self.assertIn('DP manufacturing',self.a.dataframe[0].value.columns)
+        self.route('About')
+        self.assertTrue(any('Xiuli Li' in x.value for x in self.a.markdown))
+    def test_english_ui_and_removed_sections(self):
+        for section in ['ASD formulations','All medicines','CMC evidence search','Literature comparison','About']:
+            self.route(section)
+            for elements in [self.a.markdown,self.a.caption,self.a.text,self.a.info,self.a.warning]:
+                for element in elements:self.assertIsNone(CJK.search(element.value),section)
+            for frame in self.a.dataframe:self.assertIsNone(CJK.search(frame.value.to_csv(index=False)),section)
+        text=(ROOT/'app.py').read_text(encoding='utf8')
+        for phrase in ['14 products added','What changed from','Original extraction label','Working classification']:
+            self.assertNotIn(phrase,text)
 
 if __name__=='__main__':unittest.main(verbosity=2)

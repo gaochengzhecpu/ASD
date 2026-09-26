@@ -1,41 +1,58 @@
-# EMA ASD & CMC Evidence
+# EMA Oral ASD Formulations
 
-Public Streamlit research prototype: https://ema-approved-asd.streamlit.app/
+[Public website](https://ema-approved-asd.streamlit.app/) · Chengzhe Gao
 
-## September 2026 update
+A formulation-first explorer of public EMA CMC evidence. The 20 September 2026
+snapshot contains 351 selected oral products, 350 CMC records and 435 structure
+images. Generics, hybrids and biosimilars are excluded; this is not an NME count.
 
-- Corpus snapshot: **2026-09-20**, website update: **2026-09-26**.
-- **351 selected oral products**, 350 completed CMC extractions; Etcamah lacks a public CMC source in the snapshot.
-- **9,254 fields, 2,434 CMC pages, 435 structure images**.
-- **39 working ASD products = 28 original extraction labels + 11 later likely-ASD interpretations**. These are not independently confirmed prevalence. Original labels are preserved.
-- Frozen 259-product FDA-overlap comparison: 29 paper-mapped ASD positives, 230 assumed negatives. V1/V2/V3 scope and unresolved cases are shown explicitly.
-- Local BM25 + structured-field retrieval, complete catalog filters, page-level evidence, and 24 saved Codex answers plus 4 stress cases. No runtime model API, embedding service, credentials or paid calls.
+## Pages
 
-## Run locally
+- ASD formulations: 39 review assessments, with dosage form, strength, carrier,
+  process, excipients and distinct drug-loading denominators.
+- All medicines: one ASD / Non-ASD / Insufficient evidence assessment, product
+  details, source pages and English CSV exports.
+- CMC evidence search: BM25 plus product/property retrieval and worked examples.
+  This is the retrieval component of RAG, without live generation.
+- Literature comparison: 259 FDA-overlap products, 27 ASD agreements, 5 potential
+  literature omissions and 2 formulation mismatches.
+- About: scope, limitations, acknowledgements and version history.
+
+The single assessment consolidates the completed Codex record review; it is not
+an independent or blind evaluation. Candidate carriers stay qualified. Amorphous
+silica adsorbates are excluded from the organic-matrix ASD category.
+
+## Evidence and English display
+
+The original evidence bundle is unchanged. presentation.py adds English display
+values, formulation summaries and review explanations. Existing English values
+are retained. For untranslated Chinese values, the original English CMC quotation
+is shown as Source wording. These are excerpts, not asserted translations, and
+can be less complete than the original narrative. Original component-level ASD
+fields remain archived; the page presents one consolidated product assessment.
+
+Not listed in the paper does not establish non-ASD. The five possible omissions
+remain reference disagreements, not automatically corrected ground-truth labels.
+First authorisation year does not date every subsequent formulation change.
+The website is not a clinical dosing resource.
+
+## Run and test
 
 Python 3.11+ with SQLite FTS5:
 
-```sh
-pip install -r requirements.txt
-streamlit run app.py
-python -m unittest discover -s tests -v
-```
+    pip install -r requirements.txt
+    streamlit run app.py
+    python -m unittest discover -s tests -v
 
-The app expands `evidence_bundle.zip` into a temporary directory once per server process. It includes all data and structure images (under 25 MB compressed for browser upload). Streamlit Community Cloud can keep its existing `main` branch and `app.py` entry point. No secrets are needed. `gemini_epar_analysis.xlsx` is the historical July artifact, retained for provenance; the updated application does not load it.
+The app expands evidence_bundle.zip into a temporary directory. It includes the
+public data and structure images. No secrets or model credentials are required.
+The old gemini_epar_analysis.xlsx is historical and is not loaded by the app.
+Tests cover source consistency, English output, reference discrepancies, missing
+data, complete catalog scans and Streamlit interactions.
 
-## Interview walkthrough (3–4 minutes)
+## Acknowledgements
 
-1. **Overview:** explain 351 products and the 28 + 11 label distinction.
-2. **CMC database → Palsonify:** inspect DS, DP and ASD separately; open Structures and Source pages. Compare with Rhapsido's retained crystals.
-3. **Evidence search:** retrieve `What are the ASD carrier and manufacturing process of Sotyktu?` and inspect the source page.
-4. **Complete catalog:** HPMCAS → 14 matches; restrict to `reported` → 7 products. Explain that matching a polymer does not establish its role.
-5. **Saved answer examples:** Palsonify pKa demonstrates appropriate abstention. These are recorded Codex answers, not live generation.
-6. **Benchmark & validation:** show formulation mismatch and the limits of internal regression testing.
-
-## Evidence and evaluation boundaries
-
-The cohort excludes generics, biosimilars and hybrids; it is not a count of new molecular entities or all EMA approvals. Historic authorisation does not imply current marketing availability. Source crops may describe earlier formulations. Later record-only review is separate from original extraction. Field statuses preserve reported, partly reported, interpreted, not reported and not applicable.
-
-24-question required-field coverage improved from 20/24 to 24/24 during development. This is not answer accuracy or blind validation. The same Codex conversation generated and reviewed saved answers. Independent scientific adjudication and held-out evaluation remain necessary.
-
-Saved regulatory text is evidence, not instructions. The website does not provide clinical dosing advice. Public sources are linked to official EMA product pages; source filenames and hashes are retained without local machine paths.
+Thank you to my wife Xiuli Li for her support; Tianyi Li, Yongjian Wang, Fan Meng
+and Zoe Wen for brainstorming; Fady Ibrahim for encouragement; and Kevin J.
+Edgar, Lynne Taylor and Tze Ning Hiew for inspiring my work on amorphous solid
+dispersions. Restored from the earlier website acknowledgements.
