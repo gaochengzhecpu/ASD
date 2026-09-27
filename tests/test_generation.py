@@ -62,6 +62,26 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(record['status'],'not_reported')
         self.assertEqual(record['source_ids'],[])
 
+    def test_reasoning_only_truncation_is_not_treated_as_an_answer(self):
+        pack=self.pack()
+        response=unittest.mock.MagicMock()
+        response.__enter__.return_value.read.return_value=json.dumps({'choices':[{'message':{'content':None,'reasoning_content':'Internal reasoning, not a final answer.'},'finish_reason':'length'}]}).encode()
+        with patch.object(g,'urlopen',return_value=response) as provider:
+            with self.assertRaisesRegex(g.AnswerError,'response limit'):
+                g.provider_answer(pack,'test-key','session')
+            payload=json.loads(provider.call_args.args[0].data)
+            self.assertEqual(payload['reasoning_effort'],'low')
+            self.assertEqual(payload['max_tokens'],4096)
+            self.assertEqual(provider.call_count,1)
+
+    def test_reasoning_is_never_used_as_a_fallback_answer(self):
+        pack=self.pack()
+        response=unittest.mock.MagicMock()
+        response.__enter__.return_value.read.return_value=json.dumps({'choices':[{'message':{'content':'','reasoning_content':'Not user-facing content.'},'finish_reason':'stop'}]}).encode()
+        with patch.object(g,'urlopen',return_value=response):
+            with self.assertRaisesRegex(g.AnswerError,'returned no answer'):
+                g.provider_answer(pack,'test-key','session')
+
     def test_valid_derived_citation_and_invalid_group(self):
         pack=self.pack();ident=pack['derived_records'][0]['id']
         for citation,valid in [(ident,True),(ident+', 999999:f1',False)]:

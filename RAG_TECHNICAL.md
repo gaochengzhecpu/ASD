@@ -113,6 +113,22 @@ Engineering tests cover counting without an API, negation/unsupported filters, d
 salt/hydrate distinctions, compound scope, missing pKa, missing documents, comparison context,
 citations, English presentation and Streamlit interactions. Provider responses are mocked.
 
+### Live example follow-up
+
+A Sotyktu/Zelboraf comparison retrieved the correct source pages but returned an empty model
+answer during a live demonstration. The client now explicitly requests low reasoning effort
+and allows 4,096 completion tokens while retaining the 250-word answer instruction. The
+[official GLM-5.3-Flash model card](https://huggingface.co/zai-org/GLM-5.3-Flash)
+states that unspecified reasoning effort defaults to max; this is a plausible budget risk,
+not a confirmed diagnosis of the original empty response. Truncation is reported separately
+from an empty response, and internal reasoning is never shown as a fallback answer.
+
+An initial successful retry also illustrated why valid citations do not prove correctness:
+it wrongly generalized an immediate-release designation across both products while also
+acknowledging that Zelboraf's release type was not reported. The prompt was tightened to keep
+each product's properties separate and answer only the requested properties. Scientific
+claim review remains necessary; this prompt change is not an entailment verifier.
+
 ## Remaining limitations and scientific review
 
 - Counts inherit extraction/review quality and the declared normalization policy.
