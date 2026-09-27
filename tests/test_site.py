@@ -135,7 +135,7 @@ class UITests(unittest.TestCase):
         self.assertTrue(any('ASD assessment: ASD' in x.value for x in self.a.markdown))
         self.select('Inspect a product').set_value('Kygevvi').run();self.good()
     def test_search_catalog_examples(self):
-        self.route('CMC evidence search');self.button('Find evidence').click().run();self.good()
+        self.route('CMC evidence search');self.a.radio(key='search_mode').set_value('Question search').run();self.button('Find evidence').click().run();self.good()
         self.assertTrue(any('Retrieved evidence' in h.value for h in self.a.subheader))
         self.a.radio(key='search_mode').set_value('Complete catalog').run();self.good()
         self.button('Search complete catalog').click().run();self.good()

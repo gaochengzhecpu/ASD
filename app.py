@@ -1,10 +1,13 @@
-"""English CMC explorer. Retrieval only; no runtime model API."""
+"""English CMC explorer with optional evidence-grounded OpenCode Go answers."""
 from collections import Counter
 from html import escape
+import os
+import uuid
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 import retrieval
+import generation
 from bundle import EVIDENCE_ROOT
 from data_access import load_json, citation, safe_csv, FIELD_LABELS, GROUPS
 from presentation import (assessment, rationale, basis, product_row, formulation_row,
@@ -201,11 +204,63 @@ def matching_field(p,f):
     matches=[x for x in p['fields'] if x['key']==f['key'] and x.get('entity','')==f.get('entity','')]
     return matches[0] if matches else f
 
+@st.cache_resource
+def answer_service():
+    return generation.AnswerService()
+
+def model_key():
+    key=os.environ.get('OPENCODE_GO_API_KEY','')
+    if key:return key
+    try:return str(st.secrets.get('OPENCODE_GO_API_KEY',''))
+    except (FileNotFoundError,st.errors.StreamlitSecretNotFoundError):return ''
+
+def ai_answer_view():
+    key=model_key()
+    if not key:st.info('AI answers are temporarily unavailable. You can still use Question search and Complete catalog.')
+    st.caption('GLM-5.3-Flash · Answers use retrieved CMC evidence. Reported facts and review inferences are kept distinct.')
+    with st.form('ai_question'):
+        question=st.text_input('Ask about an oral formulation',value='What are the ASD carrier and manufacturing process of Sotyktu?',max_chars=1500)
+        product=st.selectbox('Focus on a product',['Automatic']+sorted(by_name))
+        ask=st.form_submit_button('Ask EPAR',type='primary',disabled=not bool(key))
+    if ask:
+        st.session_state.pop('ai_answer',None)
+        st.session_state.pop('ai_error',None)
+        st.session_state.pop('ai_evidence',None)
+        if not question.strip():st.warning('Please enter a question.');return
+        result=retrieval.query(question,product=None if product=='Automatic' else product)
+        pack=generation.evidence_pack(result,products)
+        st.session_state['ai_evidence']=pack
+        if result['product_suggestions'] and not result['target_products']:
+            st.session_state['ai_error']='Please confirm the product using the Focus on a product selector. Possible spelling: '+', '.join(result['product_suggestions'])
+        else:
+            session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
+            with st.spinner('Retrieving CMC evidence and preparing a cited answer…'):
+                try:st.session_state['ai_answer']=answer_service().answer(pack,key,session)
+                except generation.AnswerError as error:st.session_state['ai_error']=str(error)
+    error=st.session_state.get('ai_error')
+    if error:st.warning(error)
+    pack=st.session_state.get('ai_evidence')
+    answer=st.session_state.get('ai_answer')
+    if answer:
+        st.subheader('Answer');st.caption(pack['question'])
+        st.markdown(answer['answer'])
+        st.caption('GLM-5.3-Flash · '+('Cached answer; no new model call.' if answer['cached'] else 'Generated from the retrieved evidence.')+' Citation identifiers were checked; this does not independently verify every scientific claim.')
+    if pack:
+        with st.expander('Retrieved sources',expanded=bool(error)):
+            for p in pack['source_passages']:
+                st.markdown('**'+p['product']+' · CMC page '+str(p['CMC_page'])+' · ['+p['id']+']**')
+                st.text(p['text']);st.link_button('Official EMA product page',by_name[p['product']]['metadata']['ema_url'],key='ai_source_'+p['id'])
+        if pack['warnings']:
+            with st.expander('Retrieval scope and limitations'):
+                for warning in pack['warnings']:st.write(warning)
+
 def evidence_search():
     page_intro('Evidence workspace','CMC evidence search','Search the saved formulation records and read the CMC passages behind each finding.')
-    st.markdown('<div class="search-flow"><span>Your question</span> → <span>Retrieve CMC evidence</span> → <span>Read source passages</span><span class="cost">No model API calls</span></div>',unsafe_allow_html=True)
-    st.caption('This is the retrieval step of RAG, not a live AI chatbot. Search runs on the stored index with no model API usage; it does not generate new answers.')
-    mode=st.radio('Search mode',['Question search','Complete catalog','Worked examples'],horizontal=True,key='search_mode')
+    mode=st.radio('Search mode',['AI answer','Question search','Complete catalog','Worked examples'],horizontal=True,key='search_mode')
+    if mode=='AI answer':
+        st.markdown('<div class="search-flow"><span>Your question</span> → <span>Retrieve CMC evidence</span> → <span>GLM-5.3-Flash answer</span><span class="cost">Cited sources</span></div>',unsafe_allow_html=True)
+        ai_answer_view();return
+    st.caption('Evidence-only search: no model API calls. Choose AI answer for retrieval-augmented generation with GLM-5.3-Flash.')
     if mode=='Worked examples':
         examples={
           'Sotyktu — ASD carrier and process':('Sotyktu','HPMCAS H grade is reported. API and polymer are dissolved in acetone/water, then spray-dried.'),
@@ -313,7 +368,7 @@ The site consolidates the completed Codex review into one product assessment: **
 The 39 ASD assessments include interpretations of the manufacturing record; they are not 39 independently confirmed experimental findings. Carrier assignments are marked **Reported** or **Inferred**, with their supporting CMC excerpts. Process details and quantitative drug loading are retained only where the record supports them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
 
 ### Evidence search and RAG
-BM25 text retrieval is combined with product and property matching. Codex was used outside the public website to answer questions from retrieved evidence. The website provides the retrieval step and worked examples; it has no live model-generation backend and makes no model API calls.
+BM25 text retrieval is combined with product and property matching. The **AI answer** mode sends retrieved CMC evidence to **GLM-5.3-Flash via OpenCode Go** and returns a cited answer. Other search modes retrieve evidence without calling a model. Generated answers keep source-reported facts separate from saved review interpretations. Source identifiers are checked automatically; this is not independent scientific verification.
 
 Development used 24 regression questions and 4 stress cases. Required-field coverage improved from 20/24 to 24/24. This measures retrieval coverage, not scientific answer accuracy. Independent held-out evaluation remains necessary.
 
