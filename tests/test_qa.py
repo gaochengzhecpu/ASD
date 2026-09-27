@@ -106,5 +106,15 @@ class QueryTests(unittest.TestCase):
         mapping=dict(zip(ids,products))
         self.assertTrue(all(mapping[h['id']]==name for h in hits))
 
+    def test_visible_fallback_and_conflicting_focus(self):
+        import semantic
+        with patch.object(semantic,'search',side_effect=Exception('model unavailable')):
+            r=retrieval.query('What is the carrier of Sotyktu?',method='hybrid')
+            self.assertEqual(r['retrieval_method'],'bm25')
+            self.assertTrue(r['ranked_pages'])
+            self.assertTrue(any('BM25 only' in w for w in r['warnings']))
+        r=qa.prepare('How many products are salts?',self.products,product='Sotyktu')
+        self.assertEqual(r['kind'],'clarification')
+
 
 if __name__=='__main__':unittest.main()

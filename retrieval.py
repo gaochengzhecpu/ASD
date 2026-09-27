@@ -192,7 +192,11 @@ def query(question, limit=8, product=None, fields=None, method='hybrid'):
                 if not semantic.available():raise FileNotFoundError('Semantic bundle missing')
                 dense=semantic.search(question,{p['id'] for p in targets},max(40,limit*5))
                 candidates=dense if method=='dense' else reciprocal_rank_fusion(candidates,dense)
-            except (ImportError,FileNotFoundError,OSError,ValueError,RuntimeError):
+            except Exception as error:
+                # Keep the optional ONNX path from taking down lexical search. Log only
+                # the exception class; the result explicitly declares the fallback.
+                import logging
+                logging.getLogger(__name__).warning('Semantic retrieval unavailable (%s)',type(error).__name__)
                 actual='bm25'
                 warnings.append('Local semantic retrieval is unavailable; this result uses BM25 only.')
                 if method=='dense':

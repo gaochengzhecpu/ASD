@@ -12,8 +12,10 @@ def prepare(question, products, product=None, method='hybrid'):
     with retrieval.connect() as conn:
         entities=conn.execute('SELECT * FROM products ORDER BY ord').fetchall()
         named=retrieval.names_in_query(question,entities)
-    plan=catalogue.plan_question(question,named_product=bool(named) or bool(product))
-    if plan.kind=='catalogue':return catalogue.execute(plan,products)
+    plan=catalogue.plan_question(question,named_product=bool(named))
+    if plan.kind=='catalogue':
+        if product:return {'kind':'clarification','message':'A complete cohort query needs Focus on a product set to Automatic. Please clear the product focus so the denominator is unambiguous.'}
+        return catalogue.execute(plan,products)
     if re.search(r'\bfda\b|\bbenchmark\b|\bpaper\b|\bliterature\b',question,re.I):
         return {'kind':'clarification','message':'This question needs the literature/FDA comparison, which is outside the CMC-only answer context. Please use the Literature comparison section for the 259-product comparison, potential omissions and formulation mismatches.'}
     if not named and not product:
