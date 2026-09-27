@@ -32,6 +32,9 @@ or create external links. Use only bracketed evidence identifiers for citations.
 
 class AnswerError(Exception):
     """A safe user-facing message, without provider payloads or credentials."""
+    def __init__(self,message):
+        super().__init__(message)
+        self.public_message=message
 
 
 def evidence_pack(result, products):

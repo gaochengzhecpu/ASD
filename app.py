@@ -205,7 +205,7 @@ def matching_field(p,f):
     return matches[0] if matches else f
 
 @st.cache_resource
-def answer_service():
+def answer_service(prompt_version):
     return generation.AnswerService()
 
 def model_key():
@@ -235,8 +235,11 @@ def ai_answer_view():
         else:
             session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
             with st.spinner('Retrieving CMC evidence and preparing a cited answer…'):
-                try:st.session_state['ai_answer']=answer_service().answer(pack,key,session)
-                except generation.AnswerError as error:st.session_state['ai_error']=str(error)
+                try:st.session_state['ai_answer']=answer_service(generation.SYSTEM).answer(pack,key,session)
+                except Exception as error:
+                    # Streamlit can retain an old service/exception class across hot reloads.
+                    # Use the explicit safe message contract; never render arbitrary errors.
+                    st.session_state['ai_error']=getattr(error,'public_message','The AI answer is temporarily unavailable. Please use the retrieved evidence or try again later.')
     error=st.session_state.get('ai_error')
     if error:st.warning(error)
     pack=st.session_state.get('ai_evidence')
