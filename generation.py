@@ -101,9 +101,15 @@ def provider_answer(pack, api_key, session_id):
     answer=message.get('content') if isinstance(message,dict) else None
     if not isinstance(answer,str) or not answer.strip():raise AnswerError('The model returned no answer. Retrieved evidence remains available.')
     if choice.get('finish_reason')=='length':raise AnswerError('The model response was incomplete. Please ask a narrower question.')
-    refs=set(re.findall(r'\[(\d{6}:[^\]]+)\]',answer))
+    refs=set()
+    malformed=False
+    for group in re.findall(r'\[([^\]]+)\]',answer):
+        if not re.search(r'\d{6}:',group):continue
+        refs.update(re.findall(r'\b\d{6}:p\d+\b',group))
+        residue=re.sub(r'\b\d{6}:p\d+\b','',group)
+        if residue.strip(' ,;\n\r\t'):malformed=True
     allowed={p['id'] for p in pack['source_passages']}
-    if not refs or not refs.issubset(allowed):
+    if malformed or not refs or not refs.issubset(allowed):
         raise AnswerError('The answer did not pass source-reference checks. Please use the retrieved evidence below.')
     # Prevent a generated remote link/image from becoming an external request in the UI.
     if re.search(r'https?://|!\[|<\s*(?:img|iframe|script)',answer,re.I):

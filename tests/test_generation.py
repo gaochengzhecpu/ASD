@@ -48,4 +48,11 @@ class GenerationTests(unittest.TestCase):
             with patch.object(g,'urlopen',return_value=response):
                 with self.assertRaises(g.AnswerError):g.provider_answer(pack,'test-key','session')
 
+    def test_grouped_citations_validate_every_identifier(self):
+        pack=self.pack();first,second=[p['id'] for p in pack['source_passages'][:2]]
+        response=unittest.mock.MagicMock()
+        response.__enter__.return_value.read.return_value=json.dumps({'choices':[{'message':{'content':f'Inference [{first}, {second}]'},'finish_reason':'stop'}]}).encode()
+        with patch.object(g,'urlopen',return_value=response):
+            self.assertEqual(g.provider_answer(pack,'test-key','session')['citations'],sorted([first,second]))
+
 if __name__=='__main__':unittest.main()
