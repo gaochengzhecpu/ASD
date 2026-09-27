@@ -18,6 +18,9 @@ Clearly distinguish source-reported facts, saved review interpretations, and mis
 The current review may infer an ASD carrier where the original extraction left it unresolved;
 label this Inferred, never Reported. Do not turn the presence of a polymer or a pure amorphous
 API into confirmed ASD. Keep combination components and formulation versions distinct.
+Do not invent a rationale beyond the supplied source or saved review. In particular, never
+call the proposed carrier the only polymeric excipient: cellulose, starch and disintegrants
+may also be polymeric, without serving as ASD carriers. Do not claim a unique carrier assignment.
 The retrieval is a ranked sample, not an exhaustive product list; do not supply total counts
 or claim that all matching products were found. For complete lists direct the user to Complete catalog.
 Do not infer a later formulation from an earlier capsule report. Preserve units and distinguish
@@ -102,6 +105,8 @@ def provider_answer(pack, api_key, session_id):
     # Prevent a generated remote link/image from becoming an external request in the UI.
     if re.search(r'https?://|!\[|<\s*(?:img|iframe|script)',answer,re.I):
         raise AnswerError('The answer contained unsupported links. Please use the retrieved evidence below.')
+    if re.search(r'only\s+polymer(?:ic)?\s+(?:excipient|ingredient|component)',answer,re.I):
+        raise AnswerError('The answer added an unsupported carrier-exclusivity claim. Please use the retrieved evidence below.')
     return {'answer':answer,'citations':sorted(refs),'model':MODEL,'usage':raw.get('usage',{}),'cached':False}
 
 
@@ -117,7 +122,7 @@ class AnswerService:
         if not api_key:raise AnswerError('AI answers are not configured. Evidence search remains available.')
         if not pack['source_passages']:raise AnswerError('No usable source passages were found. Please refine the question.')
         if len(pack['question'])>1500:raise AnswerError('Please keep the question under 1,500 characters.')
-        fingerprint=sha256((api_key+json.dumps(pack,sort_keys=True,ensure_ascii=False)).encode()).hexdigest()
+        fingerprint=sha256((api_key+MODEL+SYSTEM+json.dumps(pack,sort_keys=True,ensure_ascii=False)).encode()).hexdigest()
         now=time.time()
         with self.lock:
             if fingerprint in self.cache and now-self.cache[fingerprint][0]<3600:

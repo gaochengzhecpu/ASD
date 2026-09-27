@@ -42,7 +42,7 @@ class GenerationTests(unittest.TestCase):
 
     def test_invalid_citation_and_remote_links_rejected(self):
         pack=self.pack();valid=pack['source_passages'][0]['id']
-        for answer in ['No citations','Invented [999999:p999]',f'See https://example.com [{valid}]']:
+        for answer in ['No citations','Invented [999999:p999]',f'See https://example.com [{valid}]',f'HPMC is the only polymeric excipient [{valid}]']:
             response=unittest.mock.MagicMock()
             response.__enter__.return_value.read.return_value=json.dumps({'choices':[{'message':{'content':answer},'finish_reason':'stop'}]}).encode()
             with patch.object(g,'urlopen',return_value=response):
