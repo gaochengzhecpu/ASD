@@ -111,10 +111,24 @@ class QueryTests(unittest.TestCase):
         with patch.object(semantic,'search',side_effect=Exception('model unavailable')):
             r=retrieval.query('What is the carrier of Sotyktu?',method='hybrid')
             self.assertEqual(r['retrieval_method'],'bm25')
-            self.assertTrue(r['ranked_pages'])
+            # "Carrier" need not occur verbatim in the PDF. Verified field-linked
+            # evidence must still survive even when the lexical rank list is empty.
+            self.assertIn('005755:p6',{page['citation'] for page in r['contexts']})
             self.assertTrue(any('BM25 only' in w for w in r['warnings']))
         r=qa.prepare('How many products are salts?',self.products,product='Sotyktu')
         self.assertEqual(r['kind'],'clarification')
+
+    def test_bundle_cache_survives_module_reload(self):
+        import importlib
+        import bundle
+        root=bundle.ensure_bundle()
+        db=root/'data'/'epar.sqlite3'
+        before=db.stat().st_size
+        importlib.reload(bundle)
+        self.assertEqual(bundle.ensure_bundle(),root)
+        self.assertEqual(db.stat().st_size,before)
+        with retrieval.connect() as conn:
+            self.assertEqual(conn.execute('SELECT count(*) FROM pages').fetchone()[0],2434)
 
 
 if __name__=='__main__':unittest.main()

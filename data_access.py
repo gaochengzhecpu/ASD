@@ -1,7 +1,7 @@
 from pathlib import Path
 import json,re
 import retrieval
-from bundle import EVIDENCE_ROOT
+from bundle import EVIDENCE_ROOT, ensure_bundle
 ROOT=Path(__file__).resolve().parent
 FIELD_LABELS={
  'chemical_name':'Chemical name','molecular_formula':'Molecular formula','molecular_weight':'Molecular weight',
@@ -14,7 +14,9 @@ FIELD_LABELS={
 GROUPS={'Drug substance':['chemical_name','molecular_formula','molecular_weight','acid_base','pka','salt','hydrate_solvate','ds_final_form','solubility','bcs'],
         'Drug product':['dp_form','strength','excipients','dp_process','dose_regimen'],
         'ASD & loading':['asd','asd_carrier','asd_process','drug_carrier_ratio','api_fraction_asd','api_fraction_dp']}
-def load_json(name):return json.loads((EVIDENCE_ROOT/'data'/name).read_text(encoding='utf-8'))
+def load_json(name):
+    ensure_bundle()
+    return json.loads((EVIDENCE_ROOT/'data'/name).read_text(encoding='utf-8'))
 def flat_value(v):
     if v is None:return 'Not reported / no value'
     if isinstance(v,bool):return 'Yes' if v else 'No'

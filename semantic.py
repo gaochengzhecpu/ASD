@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 
 import numpy as np
-from bundle import EVIDENCE_ROOT
+from bundle import EVIDENCE_ROOT, ensure_bundle
 
 MODEL = 'BAAI/bge-small-en-v1.5'
 ROOT = EVIDENCE_ROOT / 'data' / 'semantic'
@@ -15,6 +15,7 @@ _lock = threading.Lock()
 
 @lru_cache(maxsize=1)
 def index():
+    ensure_bundle()
     manifest = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))
     corpus=EVIDENCE_ROOT/'data'/'epar.sqlite3'
     if hashlib.sha256(corpus.read_bytes()).hexdigest()!=manifest['corpus_sha256']:
@@ -64,4 +65,5 @@ def search(question, targets=None, limit=40):
 
 
 def available():
+    ensure_bundle()
     return (ROOT / 'manifest.json').exists()

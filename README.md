@@ -46,7 +46,8 @@ Python 3.11+ with SQLite FTS5:
     streamlit run app.py
     python -m unittest discover -s tests -v
 
-The app expands evidence_bundle.zip and semantic_bundle.zip into a temporary directory.
+The app lazily expands evidence_bundle.zip and semantic_bundle.zip into an immutable,
+content-addressed temporary cache. It is atomically published and survives module reloads.
 The former includes public data and structure images; the latter includes the pinned
 quantized ONNX model and a 384-dimensional embedding matrix for the same 6,348 chunks.
 No model download or embedding API call is needed at runtime. English semantic search
@@ -94,3 +95,7 @@ Examples: `How many products are salts?`, `List ASD products using HPMCAS, repor
 Unsupported conditions trigger clarification instead of silently returning a broader count.
 Salt counting separates stage-dependent conversion, complexes, missing and not-applicable records.
 Field normalization is a saved-record interpretation, not a new reading of every EPAR.
+
+After deploying multiple module changes, use Streamlit Cloud's Reboot action for a clean
+process start. Streamlit 1.64 hot reload was observed evicting modules during imports;
+a reload-time error is not evidence of a failed model download. Verify the live page after reboot.

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-from bundle import EVIDENCE_ROOT
+from bundle import EVIDENCE_ROOT, ensure_bundle
 DB = EVIDENCE_ROOT / 'data' / 'epar.sqlite3'
 
 FIELD_TERMS = {
@@ -84,6 +84,7 @@ def split_page(text, size=1700, overlap=250):
 
 @contextmanager
 def connect():
+    ensure_bundle()
     if not DB.exists(): raise FileNotFoundError('Run build first: python rag.py build')
     c=sqlite3.connect(DB.as_uri()+'?mode=ro',uri=True)
     c.row_factory=sqlite3.Row
