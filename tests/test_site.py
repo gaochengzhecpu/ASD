@@ -166,20 +166,29 @@ class UITests(unittest.TestCase):
 
     def test_structured_question_and_missing_value_ui(self):
         from unittest.mock import patch
+        from test_router import decision
         import generation
         self.route('CMC evidence search')
         def ask(question):
             next(x for x in self.a.text_input if x.label=='Ask about an oral formulation').set_value(question)
             self.button('Ask EPAR').click().run();self.good()
-        with patch.object(generation,'provider_answer') as provider:
-            ask('How many products are salts?')
+        def route(question,*args,**kwargs):
+            d=decision()
+            if 'pKa' in question:
+                d=decision(operation='lookup',filters={},product_names=['Palsonify'],fields=['pka'],normalized_question=question)
+            if 'FDA' in question:
+                d=decision(route='clarify',filters={},unsupported_conditions=['FDA approval'],clarification='Please use Literature comparison for FDA approval questions.',normalized_question=question)
+            return {'decision':d,'cached':False}
+        with patch.object(generation.AnswerService,'route',side_effect=route),patch.object(generation,'provider_answer') as provider:
+            ask('How many products are salts? 2.')
             self.assertEqual([m.value for m in self.a.metric],['146','351','18'])
             self.assertEqual(len(self.a.dataframe[0].value),146)
+            self.assertTrue(any('Understood as: How many products are salts?' in x.value for x in self.a.text))
             ask('What is the pKa of Palsonify?')
-            self.assertTrue(any('not reported' in x.value for x in self.a.markdown))
+            self.assertTrue(any('not reported' in x.value.lower() for x in self.a.markdown))
             self.assertEqual(len(self.a.metric),0)
             ask('How many salt drugs were FDA approved?')
-            self.assertTrue(any('cannot safely apply' in x.value for x in self.a.warning))
+            self.assertTrue(any('Literature comparison' in x.value for x in self.a.warning))
             self.assertEqual(len(self.a.metric),0)
             provider.assert_not_called()
 

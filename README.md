@@ -14,8 +14,10 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
   details, source pages and English CSV exports.
 - CMC evidence search: complete structured queries plus hybrid source retrieval.
   BM25 and local BGE-small vectors are fused by reciprocal rank (k=60), with product/property routing.
-  AI answer adds cited GLM-5.3-Flash generation through OpenCode Go for explanations.
-  Counts and missing-value responses run without an LLM call.
+  AI answer uses GLM-5.3-Flash through OpenCode Go to understand the question and select
+  a validated database query or RAG operation. It handles clear typos and pasted numbering.
+  Counts and property lookups use one routing call; code computes results. RAG explanations
+  use a second, evidence-grounded generation call. Repeated identical calls can use the cache.
 - Literature comparison: 259 FDA-overlap products, 27 ASD agreements, 5 potential
   literature omissions and 2 formulation mismatches.
 - About: scope, limitations, acknowledgements and version history.
@@ -51,7 +53,7 @@ content-addressed temporary cache. It is atomically published and survives modul
 The former includes public data and structure images; the latter includes the pinned
 quantized ONNX model and a 384-dimensional embedding matrix for the same 6,348 chunks.
 No model download or embedding API call is needed at runtime. English semantic search
-runs on CPU; known product/field routing also supports a limited set of Chinese terms.
+runs on CPU; AI routing can translate English/Chinese questions into an English search query.
 Evidence-only modes need no credentials. AI answer reads OPENCODE_GO_API_KEY from Streamlit Secrets or the server environment. Never commit the real secrets file.
 The old gemini_epar_analysis.xlsx is historical and is not loaded by the app.
 Tests cover source consistency, English output, reference discrepancies, missing
@@ -75,8 +77,10 @@ is enabled by this code; provider account billing settings still apply.
 Answers use bounded retrieved context and checked source IDs. A valid citation
 is not proof that every claim is entailed. The current implementation is single-turn,
 not a conversational agent. Evidence search and Complete catalog remain available
-without generation. The demo permits 30 new calls/hour and 100/day per server
-process, with a 20-second per-session interval and one-hour response caching.
+without model calls. Routing and answer generation share a limit of 30 new calls/hour
+and 100/day per server process. New question routing has a 2-second per-session interval;
+the generation belonging to that same routed request does not trigger another cooldown.
+Both phases use one-hour response caching.
 These limits reset on server restart and are not a provider billing cap.
 
 Run the offline suite with `python -m unittest discover -s tests -v`.
@@ -92,7 +96,10 @@ The old Gemini/Chroma hybrid pipeline was inspected but not re-run in this compa
 
 Examples: `How many products are salts?`, `List ASD products using HPMCAS, reported only`,
 `List salt products approved between 2020 and 2025`, `What is the pKa of Palsonify?`.
-Unsupported conditions trigger clarification instead of silently returning a broader count.
+Harmless input noise and unambiguous product typos are interpreted by the model. The website
+shows its interpretation. Unsupported substantive conditions trigger a specific clarification
+instead of silently returning a broader count. The legacy regex parser remains only for
+offline regression comparison; the AI-answer UI does not use it to route or execute questions.
 Salt counting separates stage-dependent conversion, complexes, missing and not-applicable records.
 Field normalization is a saved-record interpretation, not a new reading of every EPAR.
 

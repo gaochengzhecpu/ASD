@@ -9,6 +9,7 @@ import streamlit as st
 import retrieval
 import generation
 import qa
+import router
 from bundle import EVIDENCE_ROOT
 from data_access import load_json, citation, safe_csv, FIELD_LABELS, GROUPS
 from presentation import (assessment, rationale, basis, product_row, formulation_row,
@@ -217,35 +218,47 @@ def model_key():
 
 def ai_answer_view():
     key=model_key()
-    if not key:st.info('Structured queries remain available. Generated explanations require the configured model service.')
-    st.caption('Ask for a complete product count or an explanation grounded in CMC evidence. Counts run directly on the saved records; explanations use cited sources.')
+    if not key:st.info('AI routing needs the configured model service. Question search and Complete catalog remain available.')
+    st.caption('Ask naturally. AI understands your question and chooses a database query or CMC evidence search. Counts are calculated from the complete records.')
     with st.form('ai_question'):
         question=st.text_input('Ask about an oral formulation',value='What are the ASD carrier and manufacturing process of Sotyktu?',max_chars=1500)
         product=st.selectbox('Focus on a product',['Automatic']+sorted(by_name))
         ask=st.form_submit_button('Ask EPAR',type='primary')
     if ask:
-        st.session_state.pop('ai_answer',None)
-        st.session_state.pop('ai_error',None)
-        st.session_state.pop('ai_evidence',None)
-        st.session_state.pop('ai_structured',None)
+        for name in ('ai_answer','ai_error','ai_evidence','ai_structured','ai_routing'):
+            st.session_state.pop(name,None)
         if not question.strip():st.warning('Please enter a question.');return
-        with st.spinner('Finding the right records and source evidence…'):
-            prepared=qa.prepare(question,products,product=None if product=='Automatic' else product)
+        session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
+        service=answer_service(generation.SYSTEM+router.SYSTEM)
+        try:
+            with st.spinner('Understanding your question…'):
+                routed=service.route(question,products,None if product=='Automatic' else product,key,session)
+            with st.spinner('Looking up the records and source evidence…'):
+                prepared=qa.prepare_routed(question,products,routed['decision'])
+            st.session_state['ai_routing']={**prepared['routing'],'cached':routed.get('cached',False)}
+        except Exception as error:
+            st.session_state['ai_error']=getattr(error,'public_message','The question could not be processed just now. Please try again or use Complete catalog.')
+            prepared={'kind':'clarification','message':st.session_state['ai_error']}
         if prepared['kind']=='clarification':
             st.session_state['ai_error']=prepared['message']
         elif prepared['kind'] in ('catalogue','direct'):
             st.session_state['ai_structured']=prepared
         else:
             pack=prepared['pack'];st.session_state['ai_evidence']=pack
-            session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
             with st.spinner('Retrieving CMC evidence and preparing a cited answer…'):
-                try:st.session_state['ai_answer']=answer_service(generation.SYSTEM).answer(pack,key,session)
+                try:st.session_state['ai_answer']=service.answer(pack,key,session,routed=True)
                 except Exception as error:
                     # Streamlit can retain an old service/exception class across hot reloads.
                     # Use the explicit safe message contract; never render arbitrary errors.
                     st.session_state['ai_error']=getattr(error,'public_message','The AI answer is temporarily unavailable. Please use the retrieved evidence or try again later.')
     error=st.session_state.get('ai_error')
     if error:st.warning(error)
+    routing=st.session_state.get('ai_routing')
+    if routing:
+        names={'database':'Database query','rag':'CMC evidence search','clarify':'Clarification'}
+        st.caption(names[routing['route']]+' · AI question interpretation'+(' (cached)' if routing.get('cached') else ''))
+        st.text('Understood as: '+routing['interpreted_question'])
+        for correction in routing['corrections']:st.text(correction)
     structured=st.session_state.get('ai_structured')
     if structured:
         st.subheader('Answer');st.caption(structured['question'])
@@ -289,11 +302,11 @@ def ai_answer_view():
             if structured['records']:
                 with st.expander('Saved records'):
                     for record in structured['records']:
-                        if record['kind']=='Saved extraction':st.write(record)
+                        st.write(record)
     pack=st.session_state.get('ai_evidence')
     answer=st.session_state.get('ai_answer')
     if answer:
-        st.subheader('Answer');st.caption(pack['question'])
+        st.subheader('Answer');st.caption(pack.get('original_question',pack['question']))
         st.markdown(answer['answer'])
         st.caption('GLM-5.3-Flash · '+('Cached answer; no new model call.' if answer['cached'] else 'Generated from the retrieved evidence.')+' Citation identifiers were checked; this does not independently verify every scientific claim.')
     if pack:
@@ -428,7 +441,7 @@ The 39 ASD assessments include interpretations of the manufacturing record; they
 ### Evidence search and RAG
 Questions take two routes. Complete counts and lists use supported structured filters over the full selected cohort, with a visible denominator and unresolved records. CMC explanations use product/property matching and hybrid retrieval: SQLite BM25 plus a local BGE-small English embedding model, fused by reciprocal rank (k=60). Embeddings run on the server CPU without an embedding API.
 
-The **AI answer** mode sends the selected CMC passages and saved records to **GLM-5.3-Flash via OpenCode Go** for cited explanations. Structured counts and missing-value answers do not call that model. Page citations refer to CMC crops; extraction/review citations are identified separately. Citation checks do not independently establish scientific correctness.
+The **AI answer** mode first uses **GLM-5.3-Flash via OpenCode Go** to understand the question, correct clear typos and choose a database operation or CMC retrieval. The selected operation is validated before execution. Counts and property lookups are computed from saved records; they use the routing call but no answer-generation call. CMC explanations use a second model call with the retrieved evidence. Page citations refer to CMC crops; extraction/review citations are identified separately. Citation checks do not independently establish scientific correctness.
 
 The earlier 24 regression questions and 4 stress cases are retained. A separate 20-question development comparison uses the same corpus for BM25, dense and hybrid retrieval. Known-reference-page recall at 8 was 90%, 90% and 95%; hit rate at 5 was 90%, 85% and 85%. These are retrieval metrics against selected reference pages, not answer accuracy or a blinded comparison with the old Gemini system. Independent scientific review remains necessary.
 

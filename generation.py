@@ -151,11 +151,21 @@ class AnswerService:
         self.sessions={}
         self.cache={}
 
-    def answer(self,pack,api_key,session_id):
+    def route(self,question,products,product,api_key,session_id):
+        import router
+        if not api_key:raise AnswerError('AI routing is not configured. Please use Question search or Complete catalog.')
+        if not question.strip() or len(question)>1500:raise AnswerError('Please enter a question of 1–1,500 characters.')
+        fingerprint=sha256(('route'+api_key+MODEL+router.SYSTEM+question+str(product)+json.dumps(router.product_index(products),sort_keys=True)).encode()).hexdigest()
+        return self._request(fingerprint,session_id,lambda:router.provider_route(question,products,product,api_key,session_id),2)
+
+    def answer(self,pack,api_key,session_id,*,routed=False):
         if not api_key:raise AnswerError('AI answers are not configured. Evidence search remains available.')
         if not pack['source_passages']:raise AnswerError('No usable source passages were found. Please refine the question.')
         if len(pack['question'])>1500:raise AnswerError('Please keep the question under 1,500 characters.')
         fingerprint=sha256((api_key+MODEL+REASONING_EFFORT+str(MAX_COMPLETION_TOKENS)+SYSTEM+json.dumps(pack,sort_keys=True,ensure_ascii=False)).encode()).hexdigest()
+        return self._request(fingerprint,session_id,lambda:provider_answer(pack,api_key,session_id),0 if routed else 20)
+
+    def _request(self,fingerprint,session_id,callback,min_interval):
         now=time.time()
         with self.lock:
             if fingerprint in self.cache and now-self.cache[fingerprint][0]<3600:
@@ -163,12 +173,12 @@ class AnswerService:
             while self.calls and self.calls[0]<now-86400:self.calls.popleft()
             if len(self.calls)>=100 or sum(t>now-3600 for t in self.calls)>=30:
                 raise AnswerError('The demo answer limit has been reached. Evidence search remains available.')
-            if now-self.sessions.get(session_id,0)<20:
-                raise AnswerError('Please wait 20 seconds between new AI questions.')
+            if now-self.sessions.get(session_id,0)<min_interval:
+                raise AnswerError(f'Please wait {min_interval} seconds between new AI questions.')
             self.calls.append(now)
             self.sessions={s:t for s,t in self.sessions.items() if t>now-86400}
             self.sessions[session_id]=now
-        answer=provider_answer(pack,api_key,session_id)
+        answer=callback()
         with self.lock:
             self.cache[fingerprint]=(now,answer)
             while len(self.cache)>100:self.cache.pop(next(iter(self.cache)))

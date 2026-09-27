@@ -123,13 +123,18 @@ def reciprocal_rank_fusion(*rankings, k=60):
     return [{'id':ident,'score':score} for ident,score in sorted(scores.items(),key=lambda x:(-x[1],x[0]))]
 
 
-def query(question, limit=8, product=None, fields=None, method='hybrid'):
+def query(question, limit=8, product=None, fields=None, method='hybrid', product_names=None):
     if not question.strip() or len(question)>4000:raise ValueError('Question must contain 1–4000 characters.')
     if method not in ('bm25','dense','hybrid'):raise ValueError('Unsupported retrieval method')
     limit=max(1,min(int(limit),30))
     with connect() as c:
         products=c.execute('SELECT * FROM products ORDER BY ord').fetchall()
         targets=names_in_query(question,products)
+        if product_names is not None:
+            if not isinstance(product_names,list) or not product_names:raise ValueError('Product names must be a non-empty list')
+            names=set(product_names)
+            targets=[p for p in products if p['name'] in names]
+            if {p['name'] for p in targets}!=names:raise ValueError('Unknown product filter')
         if product:
             targets=[p for p in products if p['name'].casefold()==product.casefold() or p['id']==product]
             if not targets:raise ValueError('Unknown product filter: '+product)

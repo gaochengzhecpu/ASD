@@ -1,0 +1,538 @@
+{
+  "date": "2026-09-26",
+  "model": "glm-5.3-flash",
+  "scope": "Ten live development/regression routing checks. Expected routes selected by the implementing assistant; not a blinded accuracy estimate and not an answer-quality score. Counts executed by deterministic code. Retrieval in this runner uses BM25 to check execution scope; the public app uses hybrid retrieval.",
+  "passed": 10,
+  "total": 10,
+  "cases": [
+    {
+      "id": "paste_number",
+      "question": "How many products are salts? 2.",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "salt": "Salt"
+        }
+      },
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many products in the selected cohort are salts (API salt form)?",
+        "filters": {
+          "salt": "Salt"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [
+          "Ignored the stray trailing '2.' in the question; it is not a numeric condition."
+        ],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8450,
+        "completion_tokens": 86,
+        "total_tokens": 8536,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "answer": "146 of 351 products match the supported filters. 18 unresolved or special-case products are shown separately.",
+      "matches": 146,
+      "denominator": 351,
+      "elapsed_seconds": 4.92
+    },
+    {
+      "id": "spelling",
+      "question": "how meny meds are salt forms pls",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "salt": "Salt"
+        }
+      },
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many medicines in the selected cohort are salt forms (API salt)?",
+        "filters": {
+          "salt": "Salt"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8449,
+        "completion_tokens": 73,
+        "total_tokens": 8522,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 10,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "answer": "146 of 351 products match the supported filters. 18 unresolved or special-case products are shown separately.",
+      "matches": 146,
+      "denominator": 351,
+      "elapsed_seconds": 4.47
+    },
+    {
+      "id": "mixed_language",
+      "question": "有多少个药物是salt呀？",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "salt": "Salt"
+        }
+      },
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many products in the selected cohort are salts (API salt form)?",
+        "filters": {
+          "salt": "Salt"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8449,
+        "completion_tokens": 73,
+        "total_tokens": 8522,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 9,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "answer": "146 of 351 products match the supported filters. 18 unresolved or special-case products are shown separately.",
+      "matches": 146,
+      "denominator": 351,
+      "elapsed_seconds": 2.94
+    },
+    {
+      "id": "product_typo",
+      "question": "What is the pka of Palsonfy?",
+      "expected": {
+        "route": "database",
+        "operation": "lookup",
+        "product_names": [
+          "Palsonify"
+        ],
+        "fields": [
+          "pka"
+        ]
+      },
+      "decision": {
+        "route": "database",
+        "operation": "lookup",
+        "normalized_question": "What is the pKa of Palsonify (paltusotine hydrochloride)?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [
+          "Palsonify"
+        ],
+        "fields": [
+          "pka"
+        ],
+        "corrections": [
+          "Corrected product name 'Palsonfy' to 'Palsonify'."
+        ],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8451,
+        "completion_tokens": 105,
+        "total_tokens": 8556,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 17,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "direct",
+      "answer": "**Palsonify — pKa:** Not reported in the saved CMC extraction (Not reported) [006636:f5].",
+      "elapsed_seconds": 34.01
+    },
+    {
+      "id": "comparison",
+      "question": "Compare Sotyktu and Zelboraf's ASD carriers and how they are made.",
+      "expected": {
+        "route": "rag",
+        "operation": "compare",
+        "product_names": [
+          "Sotyktu",
+          "Zelboraf"
+        ]
+      },
+      "decision": {
+        "route": "rag",
+        "operation": "compare",
+        "normalized_question": "Compare the ASD carriers (polymers) and manufacturing processes of the amorphous solid dispersions in Sotyktu (deucravacitinib) and Zelboraf (vemurafenib), including how each ASD is made.",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [
+          "Sotyktu",
+          "Zelboraf"
+        ],
+        "fields": [
+          "asd_carrier",
+          "asd_process",
+          "drug_carrier_ratio",
+          "api_fraction_asd",
+          "dp_process"
+        ],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8460,
+        "completion_tokens": 147,
+        "total_tokens": 8607,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 21,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "evidence",
+      "answer": null,
+      "source_ids": [
+        "002409:p1",
+        "005755:p6",
+        "002409:p3",
+        "005755:p4",
+        "002409:p2",
+        "005755:p5",
+        "002409:p4",
+        "005755:p7"
+      ],
+      "elapsed_seconds": 15.14
+    },
+    {
+      "id": "real_numbers",
+      "question": "How many BCS class 2 products were approved before February 2020?",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "bcs": "2"
+        },
+        "end": "2020-01-31"
+      },
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many products in the selected cohort have a reported BCS class of 2 and were first EU authorised before February 2020 (up to and including 2020-01-31)?",
+        "filters": {
+          "bcs": "2"
+        },
+        "start": null,
+        "end": "2020-01-31",
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8457,
+        "completion_tokens": 115,
+        "total_tokens": 8572,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 20,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "answer": "44 of 210 products match the supported filters. 114 unresolved or special-case products are shown separately.",
+      "matches": 44,
+      "denominator": 210,
+      "elapsed_seconds": 4.36
+    },
+    {
+      "id": "fda_constraint",
+      "question": "How many salt drugs were FDA approved?",
+      "expected": {
+        "route": "clarify"
+      },
+      "decision": {
+        "route": "clarify",
+        "operation": "count",
+        "normalized_question": "How many salt-form drugs were FDA approved?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [
+          "FDA approval is outside this EMA oral-formulation database"
+        ],
+        "clarification": "This database covers EMA-authorised oral products, not FDA approvals, so I can't count FDA-approved salt drugs. If you'd like, I can count products in the catalogue whose API is a salt form (e.g. hydrochloride, mesilate, tosilate) — just confirm and I'll run that."
+      },
+      "usage": {
+        "prompt_tokens": 8449,
+        "completion_tokens": 148,
+        "total_tokens": 8597,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 14,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "clarification",
+      "answer": "This database covers EMA-authorised oral products, not FDA approvals, so I can't count FDA-approved salt drugs. If you'd like, I can count products in the catalogue whose API is a salt form (e.g. hydrochloride, mesilate, tosilate) — just confirm and I'll run that.",
+      "elapsed_seconds": 8.78
+    },
+    {
+      "id": "hpmcas",
+      "question": "How many ASD products use HPMCAS?",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "asd": "ASD",
+          "polymer": "HPMCAS"
+        }
+      },
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many ASD products use HPMCAS as the ASD carrier polymer?",
+        "filters": {
+          "asd": "ASD",
+          "polymer": "HPMCAS"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8450,
+        "completion_tokens": 75,
+        "total_tokens": 8525,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "answer": "16 of 351 products match the supported filters. 9 unresolved or special-case products are shown separately.",
+      "matches": 16,
+      "denominator": 351,
+      "elapsed_seconds": 1.11
+    },
+    {
+      "id": "unsupported_threshold",
+      "question": "How many products have a pKa above 7?",
+      "expected": {
+        "route": "clarify"
+      },
+      "decision": {
+        "route": "clarify",
+        "operation": "count",
+        "normalized_question": "How many products in the selected cohort have a pKa above 7?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [
+          "pKa above 7 (numeric pKa threshold)"
+        ],
+        "clarification": "I can't filter by a numeric pKa threshold like 'above 7' — the database only supports filtering by whether a pKa is reported. Would you like a count of products with a reported pKa instead, or a lookup of the stored pKa values for specific products so you can check them yourself?"
+      },
+      "usage": {
+        "prompt_tokens": 8452,
+        "completion_tokens": 161,
+        "total_tokens": 8613,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 23,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "clarification",
+      "answer": "I can't filter by a numeric pKa threshold like 'above 7' — the database only supports filtering by whether a pKa is reported. Would you like a count of products with a reported pKa instead, or a lookup of the stored pKa values for specific products so you can check them yourself?",
+      "elapsed_seconds": 19.61
+    },
+    {
+      "id": "explanation",
+      "question": "Why does crystalline drug substance not rule out an ASD formulation for Palsonify?",
+      "expected": {
+        "route": "rag",
+        "operation": "explain",
+        "product_names": [
+          "Palsonify"
+        ]
+      },
+      "decision": {
+        "route": "rag",
+        "operation": "explain",
+        "normalized_question": "Why does the fact that the drug substance is crystalline not rule out an amorphous solid dispersion (ASD) formulation for Palsonify (paltusotine hydrochloride)?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [
+          "Palsonify"
+        ],
+        "fields": [
+          "ds_final_form",
+          "asd",
+          "asd_carrier",
+          "asd_process",
+          "solubility",
+          "bcs",
+          "dp_form"
+        ],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8458,
+        "completion_tokens": 122,
+        "total_tokens": 8580,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 10,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "evidence",
+      "answer": null,
+      "source_ids": [
+        "006636:p2",
+        "006636:p4",
+        "006636:p5",
+        "006636:p3",
+        "006636:p7",
+        "006636:p1",
+        "006636:p6"
+      ],
+      "elapsed_seconds": 8.97
+    }
+  ]
+}

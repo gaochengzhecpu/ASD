@@ -4,21 +4,33 @@ Snapshot: 20 September 2026. Engineering update: 26 September 2026.
 
 ## Two question paths
 
-1. **Structured cohort queries.** A conservative parser produces an allowlisted query plan.
+GLM-5.3-Flash first interprets the user's question and returns a JSON decision: database,
+RAG, or clarification. It can normalize spelling, stray list numbers and mixed-language phrasing.
+The UI shows the normalized question and corrections. A deterministic validator checks routes,
+operators, enum values, field names, canonical products, date types and bounds. No model-produced
+SQL or Python is executed. Unknown filters and unresolved substantive conditions cannot be
+silently accepted. This schema check cannot prove that the model understood every condition;
+visible query definitions and adversarial tests remain important.
+
+1. **Structured cohort queries and lookups.** A validated model plan selects stored properties.
    Python scans the complete saved cohort, applies explicit property/date filters and
    counts distinct products. The UI shows the plan, denominator, matching names, evidence
    and unresolved/special cases. No LLM writes or executes SQL or calculates these totals.
 2. **Evidence-grounded explanations.** Resolve product names/INNs and requested fields;
    combine keyword and semantic retrieval; attach saved source-linked fields and review
    interpretations; send the bounded evidence to GLM-5.3-Flash through OpenCode Go.
-   Missing-value/document responses are deterministic when possible.
+   Missing-value/document responses are deterministic when possible. The routing call still
+   uses the model; counts and lookups do not require a second answer-generation call.
 
 ```mermaid
 flowchart TD
-  Q[Question] --> R{Supported cohort query?}
-  R -->|Yes| C[Complete structured scan]
+  Q[Question] --> L[GLM intent interpretation]
+  L --> VQ[Validate typed JSON decision]
+  VQ --> R{Selected operation}
+  R -->|Database| C[Complete scan or stored-field lookup]
   C --> T[Count + denominator + product list + uncertainty]
-  R -->|No| P[Product and field routing]
+  R -->|RAG| P[Canonical products and requested fields]
+  R -->|Clarify| CQ[Specific clarification]
   P --> B[SQLite FTS5 / BM25]
   P --> V[Local BGE vectors / cosine similarity]
   B --> F[Reciprocal rank fusion]
@@ -109,9 +121,16 @@ INNs, which may trigger product routing. There is no independent blinded answer-
 and no controlled old-Gemini-versus-new-GLM comparison. Latency includes model warm-up and
 is not a cloud SLA. Do not present these results as 95% answer accuracy.
 
-Engineering tests cover counting without an API, negation/unsupported filters, date boundaries,
+Engineering tests cover deterministic counting after a mocked routing call, negation/unsupported filters, date boundaries,
 salt/hydrate distinctions, compound scope, missing pKa, missing documents, comparison context,
 citations, English presentation and Streamlit interactions. Provider responses are mocked.
+
+The model-routing update passed 49 offline tests and ten live routing regression cases
+(see `evaluation/routing_results.json`). Cases include the exact accidental trailing `2.`,
+misspellings, mixed Chinese/English, a misspelt product, complete counts, a comparison,
+genuine BCS/date numbers, and unsupported FDA/numeric-threshold conditions. All ten selected
+the expected route and tested parameters in this run. This is a small development set,
+not an independent accuracy estimate; routing and answer quality remain separate measures.
 
 ### Live example follow-up
 
@@ -132,7 +151,8 @@ claim review remains necessary; this prompt change is not an entailment verifier
 ## Remaining limitations and scientific review
 
 - Counts inherit extraction/review quality and the declared normalization policy.
-- BGE-small is an English embedding model; arbitrary Chinese semantic questions are not validated.
+- BGE-small is an English embedding model. AI routing translates queries; broad Chinese-language
+  performance is not independently validated.
 - Numeric/descriptive cross-product questions and unrecognized synonyms can miss evidence.
 - Top-k retrieval remains incomplete. It must not supply a cohort denominator.
 - Citation validation checks that IDs were supplied, not that every claim is scientifically entailed.
@@ -146,6 +166,9 @@ claim review remains necessary; this prompt change is not an entailment verifier
 
 “I built a CMC research assistant with two paths: deterministic analysis of structured records
 for complete cohort questions, and retrieval-augmented explanations for source-based questions.
+An LLM understands the question and proposes the route and typed parameters; deterministic code
+validates and executes the plan. This lets users make harmless typos without making the model
+responsible for arithmetic or giving it arbitrary database access.
 The retrieval combines BM25 with local dense embeddings using reciprocal rank fusion, plus
 drug-specific routing and source-linked fields. Answers preserve reported facts versus review
 inferences and expose their source pages. I evaluated retrieval methods on the same corpus;
@@ -153,4 +176,5 @@ hybrid improved recall at eight on my development set, but I do not claim indepe
 answer accuracy. An important lesson was that counting retrieved passages is not database analysis.”
 
 Official implementation references: [FastEmbed](https://qdrant.github.io/fastembed/Getting%20Started/),
-[quantized model](https://huggingface.co/Qdrant/bge-small-en-v1.5-onnx-Q).
+[quantized model](https://huggingface.co/Qdrant/bge-small-en-v1.5-onnx-Q),
+[GLM JSON response format](https://docs.z.ai/api-reference/llm/chat-completion).
