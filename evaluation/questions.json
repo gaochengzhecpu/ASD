@@ -1,0 +1,25 @@
+{
+  "scope": "Fixed development/regression set, specified before the comparative run. Known reference pages are not exhaustive relevance judgements. No independent blind validation.",
+  "questions": [
+    {"id":"N01","group":"named product","q":"What carrier and solvent system are used for the Sotyktu dispersion?","pages":["005755:p6"]},
+    {"id":"N02","group":"named product","q":"Is the solid dispersion in the Lynparza capsule crystalline or amorphous?","pages":["003726:p8"]},
+    {"id":"N03","group":"named product","q":"Does copovidone and spray granulation make Rhapsido an ASD?","pages":["006313:p4","006313:p5"]},
+    {"id":"N04","group":"named product","q":"Which salt and acid stoichiometry are described for Joenja?","pages":["005927:p1"]},
+    {"id":"N05","group":"named product","q":"What happens to pralsetinib during the Gavreto spray-drying process?","pages":["005413:p5"]},
+    {"id":"N06","group":"named product","q":"Is the reviewed Xtandi dosage form a solid tablet or liquid-filled capsule?","pages":["002639:p3"]},
+    {"id":"N07","group":"named product","q":"How much of each active ingredient is in one Kygevvi sachet?","pages":["005119:p9"]},
+    {"id":"N08","group":"named product","q":"What is the BCS classification of Jascayd?","pages":["006405:p1"]},
+    {"id":"P01","group":"paraphrase","q":"How does Sotyktu turn the drug and matrix material in liquid into a dry intermediate?","pages":["005755:p6"]},
+    {"id":"P02","group":"paraphrase","q":"Does the drug in Lynparza lose its ordered lattice when dispersed in the capsule material?","pages":["003726:p8"]},
+    {"id":"P03","group":"paraphrase","q":"Does the starting crystal structure survive manufacture of Rhapsido?","pages":["006313:p4"]},
+    {"id":"P04","group":"paraphrase","q":"Which acid partner accompanies the active molecule in Joenja?","pages":["005927:p1"]},
+    {"id":"P05","group":"paraphrase","q":"Is the active ingredient of the reviewed Xtandi dissolved in liquid inside the shell?","pages":["002639:p3"]},
+    {"id":"P06","group":"paraphrase","q":"What physical form does Palsonify take after the solution is dried?","pages":["006636:p4"]},
+    {"id":"C01","group":"no brand name","q":"H grade hypromellose acetate succinate dissolved in acetone and water before drying","pages":["005755:p6"]},
+    {"id":"C02","group":"no brand name","q":"drug remains crystalline within a solid dispersion of olaparib","pages":["003726:p8"]},
+    {"id":"C03","group":"no brand name","q":"remibrutinib Form A retained after nanomilling and spray granulation","pages":["006313:p4","006313:p5"]},
+    {"id":"C04","group":"no brand name","q":"one to one phosphate acid partner for leniolisib","pages":["005927:p1"]},
+    {"id":"C05","group":"no brand name","q":"two nucleosides supplied as two grams of each per sachet for reconstitution","pages":["005119:p9"]},
+    {"id":"C06","group":"no brand name","q":"commercial free base versus early clinical hydrochloride in deucravacitinib development","pages":["005755:p5"]}
+  ]
+}

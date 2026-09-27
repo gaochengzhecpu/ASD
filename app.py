@@ -8,6 +8,7 @@ import plotly.express as px
 import streamlit as st
 import retrieval
 import generation
+import qa
 from bundle import EVIDENCE_ROOT
 from data_access import load_json, citation, safe_csv, FIELD_LABELS, GROUPS
 from presentation import (assessment, rationale, basis, product_row, formulation_row,
@@ -216,23 +217,26 @@ def model_key():
 
 def ai_answer_view():
     key=model_key()
-    if not key:st.info('AI answers are temporarily unavailable. You can still use Question search and Complete catalog.')
-    st.caption('GLM-5.3-Flash · Answers use retrieved CMC evidence. Reported facts and review inferences are kept distinct.')
+    if not key:st.info('Structured queries remain available. Generated explanations require the configured model service.')
+    st.caption('Ask for a complete product count or an explanation grounded in CMC evidence. Counts run directly on the saved records; explanations use cited sources.')
     with st.form('ai_question'):
         question=st.text_input('Ask about an oral formulation',value='What are the ASD carrier and manufacturing process of Sotyktu?',max_chars=1500)
         product=st.selectbox('Focus on a product',['Automatic']+sorted(by_name))
-        ask=st.form_submit_button('Ask EPAR',type='primary',disabled=not bool(key))
+        ask=st.form_submit_button('Ask EPAR',type='primary')
     if ask:
         st.session_state.pop('ai_answer',None)
         st.session_state.pop('ai_error',None)
         st.session_state.pop('ai_evidence',None)
+        st.session_state.pop('ai_structured',None)
         if not question.strip():st.warning('Please enter a question.');return
-        result=retrieval.query(question,product=None if product=='Automatic' else product)
-        pack=generation.evidence_pack(result,products)
-        st.session_state['ai_evidence']=pack
-        if result['product_suggestions'] and not result['target_products']:
-            st.session_state['ai_error']='Please confirm the product using the Focus on a product selector. Possible spelling: '+', '.join(result['product_suggestions'])
+        with st.spinner('Finding the right records and source evidence…'):
+            prepared=qa.prepare(question,products,product=None if product=='Automatic' else product)
+        if prepared['kind']=='clarification':
+            st.session_state['ai_error']=prepared['message']
+        elif prepared['kind'] in ('catalogue','direct'):
+            st.session_state['ai_structured']=prepared
         else:
+            pack=prepared['pack'];st.session_state['ai_evidence']=pack
             session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
             with st.spinner('Retrieving CMC evidence and preparing a cited answer…'):
                 try:st.session_state['ai_answer']=answer_service(generation.SYSTEM).answer(pack,key,session)
@@ -242,6 +246,50 @@ def ai_answer_view():
                     st.session_state['ai_error']=getattr(error,'public_message','The AI answer is temporarily unavailable. Please use the retrieved evidence or try again later.')
     error=st.session_state.get('ai_error')
     if error:st.warning(error)
+    structured=st.session_state.get('ai_structured')
+    if structured:
+        st.subheader('Answer');st.caption(structured['question'])
+        st.markdown(structured['answer']);st.caption(structured['method'])
+        if structured['kind']=='catalogue':
+            cols=st.columns(3)
+            for col,label,n in zip(cols,['Matching products','Products in scope','Unresolved / special cases'],[len(structured['matched']),structured['denominator'],len(structured['uncertain'])]):col.metric(label,n)
+            st.caption(structured['scope'])
+            with st.expander('Query definition',expanded=True):
+                plan=structured['plan'];filters=plan['filters']
+                st.write('Filters: '+('; '.join(k+': '+v for k,v in filters.items()) or 'All selected products'))
+                st.write('Evidence: '+('Reported only' if plan['reported_only'] else 'Saved reported values and clearly labelled interpretations'))
+                if plan['start'] or plan['end']:st.write('First authorisation: '+str(plan['start'] or 'cohort start')+' through '+str(plan['end'] or 'snapshot date')+' (inclusive).')
+                if 'salt' in filters:
+                    st.write(structured['salt_policy'])
+                    st.write('Salt status across the date-filtered cohort: '+ '; '.join(k+': '+str(v) for k,v in structured['salt_distribution'].items()))
+            st.markdown('**Matching products**')
+            if structured['matched']:
+                table(structured['matched'],height=350)
+                csv_button('Download complete matches',structured['matched'],'CMC_query_matches.csv','ai_matches')
+            else:st.info('No definite matches under these filters.')
+            if structured['uncertain']:
+                with st.expander('Unresolved and special-case products'):
+                    table(structured['uncertain'])
+                    csv_button('Download unresolved records',structured['uncertain'],'CMC_query_unresolved.csv','ai_unknown')
+            options=sorted(r['Product'] for r in structured['matched']+structured['uncertain'])
+            if options:
+                with st.expander('Inspect the evidence for a product'):
+                    selected=st.selectbox('Query product',options,key='query_product')
+                    record=by_name[selected]
+                    fields={'salt':['salt'],'asd':['asd'],'polymer':['asd_carrier','excipients'],
+                            'excipient':['excipients'],'process':['asd_process','dp_process'],
+                            'form':['dp_form'],'bcs':['bcs'],'pka':['pka']}
+                    keys={key for filter_name in structured['plan']['filters'] for key in fields[filter_name]}
+                    if 'asd' in keys:st.write(rationale(record))
+                    if 'polymer' in structured['plan']['filters'] and assessment(record)=='ASD':carrier_panel(record)
+                    for f in record['fields']:
+                        if f['key'] in keys:field_source(record,f)
+        else:
+            if structured.get('scope'):st.caption(structured['scope'])
+            if structured['records']:
+                with st.expander('Saved records'):
+                    for record in structured['records']:
+                        if record['kind']=='Saved extraction':st.write(record)
     pack=st.session_state.get('ai_evidence')
     answer=st.session_state.get('ai_answer')
     if answer:
@@ -249,10 +297,16 @@ def ai_answer_view():
         st.markdown(answer['answer'])
         st.caption('GLM-5.3-Flash · '+('Cached answer; no new model call.' if answer['cached'] else 'Generated from the retrieved evidence.')+' Citation identifiers were checked; this does not independently verify every scientific claim.')
     if pack:
+        st.caption('Retrieval: '+pack['retrieval_method']+' · local retrieval; GLM-5.3-Flash generates the explanation.')
         with st.expander('Retrieved sources',expanded=bool(error)):
             for p in pack['source_passages']:
                 st.markdown('**'+p['product']+' · CMC page '+str(p['CMC_page'])+' · ['+p['id']+']**')
                 st.text(p['text']);st.link_button('Official EMA product page',by_name[p['product']]['metadata']['ema_url'],key='ai_source_'+p['id'])
+        if pack.get('derived_records'):
+            with st.expander('Saved extraction and review records'):
+                for record in pack['derived_records']:
+                    st.markdown('**'+record['product']+' · '+record['kind']+' · ['+record['id']+']**')
+                    st.write(record['value'])
         if pack['warnings']:
             with st.expander('Retrieval scope and limitations'):
                 for warning in pack['warnings']:st.write(warning)
@@ -261,9 +315,9 @@ def evidence_search():
     page_intro('Evidence workspace','CMC evidence search','Search the saved formulation records and read the CMC passages behind each finding.')
     mode=st.radio('Search mode',['AI answer','Question search','Complete catalog','Worked examples'],horizontal=True,key='search_mode')
     if mode=='AI answer':
-        st.markdown('<div class="search-flow"><span>Your question</span> → <span>Retrieve CMC evidence</span> → <span>GLM-5.3-Flash answer</span><span class="cost">Cited sources</span></div>',unsafe_allow_html=True)
+        st.markdown('<div class="search-flow"><span>Your question</span> → <span>Complete data query or source retrieval</span> → <span>Traceable answer</span></div>',unsafe_allow_html=True)
         ai_answer_view();return
-    st.caption('Evidence-only search: no model API calls. Choose AI answer for retrieval-augmented generation with GLM-5.3-Flash.')
+    st.caption('Evidence-only search uses local keyword and semantic retrieval; no model API calls. AI answer also handles complete structured queries and cited explanations.')
     if mode=='Worked examples':
         examples={
           'Sotyktu — ASD carrier and process':('Sotyktu','HPMCAS H grade is reported. API and polymer are dissolved in acetone/water, then spray-dried.'),
@@ -308,6 +362,7 @@ def evidence_search():
     result=st.session_state.get('search_result')
     if not result:return
     st.subheader('Retrieved evidence');st.caption(result['question'])
+    st.caption('Retrieval method: '+result['retrieval_method']+' · no model API call')
     for p in result['target_products']:
         record=by_name[p['product']];st.markdown('**'+p['product']+' — '+assessment(record)+'**');st.write(rationale(record))
         if assessment(record)=='ASD' and any(f['key']=='asd_carrier' for f in result['facts']):carrier_panel(record)
@@ -371,9 +426,11 @@ The site consolidates the completed Codex review into one product assessment: **
 The 39 ASD assessments include interpretations of the manufacturing record; they are not 39 independently confirmed experimental findings. Carrier assignments are marked **Reported** or **Inferred**, with their supporting CMC excerpts. Process details and quantitative drug loading are retained only where the record supports them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
 
 ### Evidence search and RAG
-BM25 text retrieval is combined with product and property matching. The **AI answer** mode sends retrieved CMC evidence to **GLM-5.3-Flash via OpenCode Go** and returns a cited answer. Other search modes retrieve evidence without calling a model. Generated answers keep source-reported facts separate from saved review interpretations. Source identifiers are checked automatically; this is not independent scientific verification.
+Questions take two routes. Complete counts and lists use supported structured filters over the full selected cohort, with a visible denominator and unresolved records. CMC explanations use product/property matching and hybrid retrieval: SQLite BM25 plus a local BGE-small English embedding model, fused by reciprocal rank (k=60). Embeddings run on the server CPU without an embedding API.
 
-Development used 24 regression questions and 4 stress cases. Required-field coverage improved from 20/24 to 24/24. This measures retrieval coverage, not scientific answer accuracy. Independent held-out evaluation remains necessary.
+The **AI answer** mode sends the selected CMC passages and saved records to **GLM-5.3-Flash via OpenCode Go** for cited explanations. Structured counts and missing-value answers do not call that model. Page citations refer to CMC crops; extraction/review citations are identified separately. Citation checks do not independently establish scientific correctness.
+
+The earlier 24 regression questions and 4 stress cases are retained. A separate 20-question development comparison uses the same corpus for BM25, dense and hybrid retrieval. Known-reference-page recall at 8 was 90%, 90% and 95%; hit rate at 5 was 90%, 85% and 85%. These are retrieval metrics against selected reference pages, not answer accuracy or a blinded comparison with the old Gemini system. Independent scientific review remains necessary.
 
 ### Acknowledgements
 Thank you to my wife, **Xiuli Li**, for her support; my friends **Tianyi Li, Yongjian Wang, Fan Meng and Zoe Wen** for brainstorming; and my manager **Fady Ibrahim** for his encouragement. Thank you to my PhD advisor **Kevin J. Edgar**, my postdoctoral advisor **Lynne Taylor**, and my mentor **Tze Ning Hiew** for inspiring my work on amorphous solid dispersions.

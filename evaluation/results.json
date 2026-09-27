@@ -1,0 +1,1892 @@
+{
+  "scope": "Fixed development/regression set, specified before the comparative run. Known reference pages are not exhaustive relevance judgements. No independent blind validation.",
+  "model": "BAAI/bge-small-en-v1.5, local ONNX",
+  "corpus": "same 6,348 chunks for every method",
+  "metrics": [
+    {
+      "method": "bm25",
+      "group": "all",
+      "questions": 20,
+      "known_page_hit_at_5": 0.9,
+      "known_page_recall_at_8": 0.9,
+      "reciprocal_rank_at_8": 0.583,
+      "packed_reference_coverage": 0.95,
+      "seconds": 0.048
+    },
+    {
+      "method": "bm25",
+      "group": "named product",
+      "questions": 8,
+      "known_page_hit_at_5": 1.0,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.494,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.047
+    },
+    {
+      "method": "bm25",
+      "group": "paraphrase",
+      "questions": 6,
+      "known_page_hit_at_5": 0.833,
+      "known_page_recall_at_8": 0.833,
+      "reciprocal_rank_at_8": 0.533,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.049
+    },
+    {
+      "method": "bm25",
+      "group": "no brand name",
+      "questions": 6,
+      "known_page_hit_at_5": 0.833,
+      "known_page_recall_at_8": 0.833,
+      "reciprocal_rank_at_8": 0.75,
+      "packed_reference_coverage": 0.833,
+      "seconds": 0.048
+    },
+    {
+      "method": "dense",
+      "group": "all",
+      "questions": 20,
+      "known_page_hit_at_5": 0.85,
+      "known_page_recall_at_8": 0.9,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 0.9,
+      "seconds": 0.085
+    },
+    {
+      "method": "dense",
+      "group": "named product",
+      "questions": 8,
+      "known_page_hit_at_5": 0.875,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.647,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.137
+    },
+    {
+      "method": "dense",
+      "group": "paraphrase",
+      "questions": 6,
+      "known_page_hit_at_5": 1.0,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.417,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.049
+    },
+    {
+      "method": "dense",
+      "group": "no brand name",
+      "questions": 6,
+      "known_page_hit_at_5": 0.667,
+      "known_page_recall_at_8": 0.667,
+      "reciprocal_rank_at_8": 0.389,
+      "packed_reference_coverage": 0.667,
+      "seconds": 0.05
+    },
+    {
+      "method": "hybrid",
+      "group": "all",
+      "questions": 20,
+      "known_page_hit_at_5": 0.85,
+      "known_page_recall_at_8": 0.95,
+      "reciprocal_rank_at_8": 0.584,
+      "packed_reference_coverage": 0.95,
+      "seconds": 0.049
+    },
+    {
+      "method": "hybrid",
+      "group": "named product",
+      "questions": 8,
+      "known_page_hit_at_5": 1.0,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.604,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.048
+    },
+    {
+      "method": "hybrid",
+      "group": "paraphrase",
+      "questions": 6,
+      "known_page_hit_at_5": 0.833,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.533,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.049
+    },
+    {
+      "method": "hybrid",
+      "group": "no brand name",
+      "questions": 6,
+      "known_page_hit_at_5": 0.667,
+      "known_page_recall_at_8": 0.833,
+      "reciprocal_rank_at_8": 0.607,
+      "packed_reference_coverage": 0.833,
+      "seconds": 0.049
+    }
+  ],
+  "runs": [
+    {
+      "id": "N01",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.2,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0458,
+      "ranked_pages": [
+        "005755:p7",
+        "005755:p4",
+        "005755:p3",
+        "005755:p2",
+        "005755:p6"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p6",
+        "005755:p7"
+      ]
+    },
+    {
+      "id": "N02",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0472,
+      "ranked_pages": [
+        "003726:p4",
+        "003726:p8",
+        "003726:p1",
+        "003726:p5",
+        "003726:p3",
+        "003726:p6"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "N03",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0465,
+      "ranked_pages": [
+        "006313:p1",
+        "006313:p5",
+        "006313:p6",
+        "006313:p4",
+        "006313:p3"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6"
+      ]
+    },
+    {
+      "id": "N04",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0466,
+      "ranked_pages": [
+        "005927:p3",
+        "005927:p1",
+        "005927:p4",
+        "005927:p7"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p3",
+        "005927:p4",
+        "005927:p7"
+      ]
+    },
+    {
+      "id": "N05",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0508,
+      "ranked_pages": [
+        "005413:p7",
+        "005413:p5",
+        "005413:p10",
+        "005413:p2",
+        "005413:p3",
+        "005413:p9",
+        "005413:p8",
+        "005413:p6"
+      ],
+      "packed_pages": [
+        "005413:p10",
+        "005413:p2",
+        "005413:p3",
+        "005413:p5",
+        "005413:p6",
+        "005413:p7",
+        "005413:p8",
+        "005413:p9"
+      ]
+    },
+    {
+      "id": "N06",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0491,
+      "ranked_pages": [
+        "002639:p4",
+        "002639:p3",
+        "002639:p5",
+        "002639:p2"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "N07",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.25,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0506,
+      "ranked_pages": [
+        "005119:p11",
+        "005119:p13",
+        "005119:p14",
+        "005119:p9",
+        "005119:p1",
+        "005119:p16",
+        "005119:p4",
+        "005119:p8"
+      ],
+      "packed_pages": [
+        "005119:p1",
+        "005119:p11",
+        "005119:p13",
+        "005119:p14",
+        "005119:p16",
+        "005119:p4",
+        "005119:p8",
+        "005119:p9"
+      ]
+    },
+    {
+      "id": "N08",
+      "group": "named product",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0422,
+      "ranked_pages": [
+        "006405:p1",
+        "006405:p4"
+      ],
+      "packed_pages": [
+        "006405:p1",
+        "006405:p4"
+      ]
+    },
+    {
+      "id": "P01",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0468,
+      "ranked_pages": [
+        "005755:p8",
+        "005755:p6",
+        "005755:p3",
+        "005755:p4",
+        "005755:p7"
+      ],
+      "packed_pages": [
+        "005755:p3",
+        "005755:p4",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "P02",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.2,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0478,
+      "ranked_pages": [
+        "003726:p5",
+        "003726:p4",
+        "003726:p6",
+        "003726:p1",
+        "003726:p8",
+        "003726:p7",
+        "003726:p2"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "P03",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 0.0,
+      "reciprocal_rank_at_8": 0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0479,
+      "ranked_pages": [
+        "006313:p2",
+        "006313:p1",
+        "006313:p8",
+        "006313:p6",
+        "006313:p7"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p7",
+        "006313:p8"
+      ]
+    },
+    {
+      "id": "P04",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.051,
+      "ranked_pages": [
+        "005927:p4",
+        "005927:p1",
+        "005927:p2",
+        "005927:p5",
+        "005927:p3",
+        "005927:p8",
+        "005927:p7",
+        "005927:p9"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p7",
+        "005927:p8",
+        "005927:p9"
+      ]
+    },
+    {
+      "id": "P05",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0505,
+      "ranked_pages": [
+        "002639:p3",
+        "002639:p4",
+        "002639:p2",
+        "002639:p1",
+        "002639:p5"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "P06",
+      "group": "paraphrase",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0472,
+      "ranked_pages": [
+        "006636:p4",
+        "006636:p7",
+        "006636:p5",
+        "006636:p2"
+      ],
+      "packed_pages": [
+        "006636:p2",
+        "006636:p4",
+        "006636:p5",
+        "006636:p7"
+      ]
+    },
+    {
+      "id": "C01",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.047,
+      "ranked_pages": [
+        "005755:p6",
+        "005267:p5",
+        "004682:p6",
+        "004746:p9",
+        "005755:p5",
+        "002313:p3",
+        "005267:p4",
+        "005863:p4"
+      ],
+      "packed_pages": [
+        "002313:p3",
+        "004682:p6",
+        "004746:p9",
+        "005267:p4",
+        "005267:p5",
+        "005755:p5",
+        "005755:p6",
+        "005863:p4"
+      ]
+    },
+    {
+      "id": "C02",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0481,
+      "ranked_pages": [
+        "003726:p8",
+        "003726:p4",
+        "003726:p3",
+        "003726:p1",
+        "003726:p7",
+        "003726:p2"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "C03",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0475,
+      "ranked_pages": [
+        "006313:p6",
+        "006313:p5",
+        "006313:p8",
+        "006313:p4",
+        "006313:p2"
+      ],
+      "packed_pages": [
+        "006313:p2",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p8"
+      ]
+    },
+    {
+      "id": "C04",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0469,
+      "ranked_pages": [
+        "005927:p1",
+        "005927:p4",
+        "005927:p5",
+        "005927:p2",
+        "005927:p8",
+        "005927:p3",
+        "005927:p9",
+        "005927:p6"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p6",
+        "005927:p8",
+        "005927:p9"
+      ]
+    },
+    {
+      "id": "C05",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 0.0,
+      "reciprocal_rank_at_8": 0,
+      "packed_reference_coverage": 0.0,
+      "seconds": 0.0465,
+      "ranked_pages": [
+        "005119:p11",
+        "005119:p13",
+        "003876:p8",
+        "003876:p7",
+        "003876:p13",
+        "002583:p1",
+        "003876:p12",
+        "004660:p6"
+      ],
+      "packed_pages": [
+        "002583:p1",
+        "003876:p12",
+        "003876:p13",
+        "003876:p7",
+        "003876:p8",
+        "004660:p6",
+        "005119:p11",
+        "005119:p13"
+      ]
+    },
+    {
+      "id": "C06",
+      "group": "no brand name",
+      "method": "bm25",
+      "actual_method": "bm25",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0505,
+      "ranked_pages": [
+        "005755:p5",
+        "005755:p2",
+        "005755:p8",
+        "005755:p7",
+        "005755:p4",
+        "005755:p6",
+        "005755:p3",
+        "005755:p1"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "N01",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.2,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.7586,
+      "ranked_pages": [
+        "005755:p3",
+        "005755:p5",
+        "005755:p7",
+        "005755:p4",
+        "005755:p6",
+        "005755:p8",
+        "005755:p2",
+        "005755:p1"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "N02",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0509,
+      "ranked_pages": [
+        "003726:p4",
+        "003726:p8",
+        "003726:p5",
+        "003726:p7",
+        "003726:p3",
+        "003726:p1",
+        "003726:p6",
+        "003726:p2"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "N03",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0489,
+      "ranked_pages": [
+        "006313:p6",
+        "006313:p3",
+        "006313:p5",
+        "006313:p8",
+        "006313:p9",
+        "006313:p4",
+        "006313:p1",
+        "006313:p2"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p8",
+        "006313:p9"
+      ]
+    },
+    {
+      "id": "N04",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.14285714285714285,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0483,
+      "ranked_pages": [
+        "005927:p7",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p8",
+        "005927:p2",
+        "005927:p1",
+        "005927:p6"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p6",
+        "005927:p7",
+        "005927:p8"
+      ]
+    },
+    {
+      "id": "N05",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0493,
+      "ranked_pages": [
+        "005413:p5",
+        "005413:p7",
+        "005413:p2",
+        "005413:p6",
+        "005413:p1",
+        "005413:p4",
+        "005413:p8",
+        "005413:p10"
+      ],
+      "packed_pages": [
+        "005413:p1",
+        "005413:p10",
+        "005413:p2",
+        "005413:p4",
+        "005413:p5",
+        "005413:p6",
+        "005413:p7",
+        "005413:p8"
+      ]
+    },
+    {
+      "id": "N06",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0486,
+      "ranked_pages": [
+        "002639:p3",
+        "002639:p5",
+        "002639:p1",
+        "002639:p4",
+        "002639:p2"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "N07",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0475,
+      "ranked_pages": [
+        "005119:p9",
+        "005119:p1",
+        "005119:p17",
+        "005119:p11",
+        "005119:p13",
+        "005119:p4",
+        "005119:p5",
+        "005119:p15"
+      ],
+      "packed_pages": [
+        "005119:p1",
+        "005119:p11",
+        "005119:p13",
+        "005119:p15",
+        "005119:p17",
+        "005119:p4",
+        "005119:p5",
+        "005119:p9"
+      ]
+    },
+    {
+      "id": "N08",
+      "group": "named product",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0476,
+      "ranked_pages": [
+        "006405:p1",
+        "006405:p4",
+        "006405:p5",
+        "006405:p3",
+        "006405:p8",
+        "006405:p6",
+        "006405:p7",
+        "006405:p2"
+      ],
+      "packed_pages": [
+        "006405:p1",
+        "006405:p2",
+        "006405:p3",
+        "006405:p4",
+        "006405:p5",
+        "006405:p6",
+        "006405:p7",
+        "006405:p8"
+      ]
+    },
+    {
+      "id": "P01",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0491,
+      "ranked_pages": [
+        "005755:p4",
+        "005755:p3",
+        "005755:p6",
+        "005755:p2",
+        "005755:p7",
+        "005755:p5",
+        "005755:p8",
+        "005755:p1"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "P02",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.25,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0517,
+      "ranked_pages": [
+        "003726:p4",
+        "003726:p7",
+        "003726:p5",
+        "003726:p8",
+        "003726:p3",
+        "003726:p1",
+        "003726:p6",
+        "003726:p2"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "P03",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.25,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0486,
+      "ranked_pages": [
+        "006313:p2",
+        "006313:p8",
+        "006313:p7",
+        "006313:p4",
+        "006313:p3",
+        "006313:p6",
+        "006313:p5",
+        "006313:p9"
+      ],
+      "packed_pages": [
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p7",
+        "006313:p8",
+        "006313:p9"
+      ]
+    },
+    {
+      "id": "P04",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0486,
+      "ranked_pages": [
+        "005927:p2",
+        "005927:p3",
+        "005927:p1",
+        "005927:p5",
+        "005927:p4",
+        "005927:p7",
+        "005927:p8",
+        "005927:p9"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p7",
+        "005927:p8",
+        "005927:p9"
+      ]
+    },
+    {
+      "id": "P05",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0482,
+      "ranked_pages": [
+        "002639:p3",
+        "002639:p5",
+        "002639:p1",
+        "002639:p4",
+        "002639:p2"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "P06",
+      "group": "paraphrase",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0477,
+      "ranked_pages": [
+        "006636:p2",
+        "006636:p3",
+        "006636:p4",
+        "006636:p6",
+        "006636:p5",
+        "006636:p7",
+        "006636:p1"
+      ],
+      "packed_pages": [
+        "006636:p1",
+        "006636:p2",
+        "006636:p3",
+        "006636:p4",
+        "006636:p5",
+        "006636:p6",
+        "006636:p7"
+      ]
+    },
+    {
+      "id": "C01",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 0.0,
+      "reciprocal_rank_at_8": 0,
+      "packed_reference_coverage": 0.0,
+      "seconds": 0.0532,
+      "ranked_pages": [
+        "002490:p3",
+        "005614:p6",
+        "002552:p4",
+        "002313:p3",
+        "004691:p6",
+        "005863:p4",
+        "002314:p7",
+        "004976:p13"
+      ],
+      "packed_pages": [
+        "002313:p3",
+        "002314:p7",
+        "002490:p3",
+        "002552:p4",
+        "004691:p6",
+        "004976:p13",
+        "005614:p6",
+        "005863:p4"
+      ]
+    },
+    {
+      "id": "C02",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0482,
+      "ranked_pages": [
+        "003726:p3",
+        "003726:p1",
+        "003726:p8",
+        "003726:p4",
+        "003726:p6",
+        "003726:p5",
+        "003726:p2",
+        "003726:p7"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "C03",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0486,
+      "ranked_pages": [
+        "006313:p5",
+        "006313:p2",
+        "006313:p4",
+        "006313:p1",
+        "006313:p7",
+        "006313:p6",
+        "006313:p8",
+        "006313:p3"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p7",
+        "006313:p8"
+      ]
+    },
+    {
+      "id": "C04",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0483,
+      "ranked_pages": [
+        "005927:p5",
+        "005927:p1",
+        "005927:p2",
+        "005927:p8",
+        "005927:p3",
+        "005927:p6",
+        "005927:p7",
+        "005927:p4"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p6",
+        "005927:p7",
+        "005927:p8"
+      ]
+    },
+    {
+      "id": "C05",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 0.0,
+      "reciprocal_rank_at_8": 0,
+      "packed_reference_coverage": 0.0,
+      "seconds": 0.0519,
+      "ranked_pages": [
+        "005119:p11",
+        "006327:p6",
+        "006327:p9",
+        "003759:p3",
+        "005407:p5",
+        "005375:p5",
+        "006079:p1",
+        "003876:p13"
+      ],
+      "packed_pages": [
+        "003759:p3",
+        "003876:p13",
+        "005119:p11",
+        "005375:p5",
+        "005407:p5",
+        "006079:p1",
+        "006327:p6",
+        "006327:p9"
+      ]
+    },
+    {
+      "id": "C06",
+      "group": "no brand name",
+      "method": "dense",
+      "actual_method": "dense",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0492,
+      "ranked_pages": [
+        "005755:p3",
+        "005755:p5",
+        "005755:p2",
+        "005755:p1",
+        "005755:p7",
+        "005755:p4",
+        "005755:p8",
+        "005755:p6"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "N01",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.25,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0474,
+      "ranked_pages": [
+        "005755:p7",
+        "005755:p3",
+        "005755:p4",
+        "005755:p6",
+        "005755:p2",
+        "005755:p5",
+        "005755:p8",
+        "005755:p1"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "N02",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.048,
+      "ranked_pages": [
+        "003726:p4",
+        "003726:p8",
+        "003726:p5",
+        "003726:p1",
+        "003726:p3",
+        "003726:p6",
+        "003726:p7",
+        "003726:p2"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "N03",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0471,
+      "ranked_pages": [
+        "006313:p6",
+        "006313:p5",
+        "006313:p1",
+        "006313:p3",
+        "006313:p4",
+        "006313:p8",
+        "006313:p9",
+        "006313:p2"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p8",
+        "006313:p9"
+      ]
+    },
+    {
+      "id": "N04",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.25,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.048,
+      "ranked_pages": [
+        "005927:p3",
+        "005927:p4",
+        "005927:p7",
+        "005927:p1",
+        "005927:p5",
+        "005927:p8",
+        "005927:p2",
+        "005927:p6"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p6",
+        "005927:p7",
+        "005927:p8"
+      ]
+    },
+    {
+      "id": "N05",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0496,
+      "ranked_pages": [
+        "005413:p5",
+        "005413:p7",
+        "005413:p2",
+        "005413:p10",
+        "005413:p6",
+        "005413:p9",
+        "005413:p8",
+        "005413:p3"
+      ],
+      "packed_pages": [
+        "005413:p10",
+        "005413:p2",
+        "005413:p3",
+        "005413:p5",
+        "005413:p6",
+        "005413:p7",
+        "005413:p8",
+        "005413:p9"
+      ]
+    },
+    {
+      "id": "N06",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0491,
+      "ranked_pages": [
+        "002639:p3",
+        "002639:p4",
+        "002639:p5",
+        "002639:p2",
+        "002639:p1"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "N07",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0518,
+      "ranked_pages": [
+        "005119:p13",
+        "005119:p11",
+        "005119:p9",
+        "005119:p1",
+        "005119:p4",
+        "005119:p14",
+        "005119:p16",
+        "005119:p15"
+      ],
+      "packed_pages": [
+        "005119:p1",
+        "005119:p11",
+        "005119:p13",
+        "005119:p14",
+        "005119:p15",
+        "005119:p16",
+        "005119:p4",
+        "005119:p9"
+      ]
+    },
+    {
+      "id": "N08",
+      "group": "named product",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0435,
+      "ranked_pages": [
+        "006405:p1",
+        "006405:p4",
+        "006405:p5",
+        "006405:p3",
+        "006405:p8",
+        "006405:p6",
+        "006405:p7",
+        "006405:p2"
+      ],
+      "packed_pages": [
+        "006405:p1",
+        "006405:p2",
+        "006405:p3",
+        "006405:p4",
+        "006405:p5",
+        "006405:p6",
+        "006405:p7",
+        "006405:p8"
+      ]
+    },
+    {
+      "id": "P01",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.3333333333333333,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0486,
+      "ranked_pages": [
+        "005755:p3",
+        "005755:p4",
+        "005755:p6",
+        "005755:p8",
+        "005755:p7",
+        "005755:p2",
+        "005755:p5",
+        "005755:p1"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    },
+    {
+      "id": "P02",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.2,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0477,
+      "ranked_pages": [
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p1",
+        "003726:p8",
+        "003726:p7",
+        "003726:p2",
+        "003726:p3"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "P03",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.16666666666666666,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0484,
+      "ranked_pages": [
+        "006313:p2",
+        "006313:p7",
+        "006313:p8",
+        "006313:p6",
+        "006313:p1",
+        "006313:p4",
+        "006313:p3",
+        "006313:p5"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p7",
+        "006313:p8"
+      ]
+    },
+    {
+      "id": "P04",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0511,
+      "ranked_pages": [
+        "005927:p2",
+        "005927:p1",
+        "005927:p4",
+        "005927:p3",
+        "005927:p5",
+        "005927:p8",
+        "005927:p7",
+        "005927:p9"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p7",
+        "005927:p8",
+        "005927:p9"
+      ]
+    },
+    {
+      "id": "P05",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0512,
+      "ranked_pages": [
+        "002639:p3",
+        "002639:p5",
+        "002639:p1",
+        "002639:p4",
+        "002639:p2"
+      ],
+      "packed_pages": [
+        "002639:p1",
+        "002639:p2",
+        "002639:p3",
+        "002639:p4",
+        "002639:p5"
+      ]
+    },
+    {
+      "id": "P06",
+      "group": "paraphrase",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0484,
+      "ranked_pages": [
+        "006636:p4",
+        "006636:p2",
+        "006636:p7",
+        "006636:p5",
+        "006636:p3",
+        "006636:p6",
+        "006636:p1"
+      ],
+      "packed_pages": [
+        "006636:p1",
+        "006636:p2",
+        "006636:p3",
+        "006636:p4",
+        "006636:p5",
+        "006636:p6",
+        "006636:p7"
+      ]
+    },
+    {
+      "id": "C01",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.14285714285714285,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0492,
+      "ranked_pages": [
+        "002313:p3",
+        "005863:p4",
+        "005614:p6",
+        "004691:p6",
+        "002081:p3",
+        "002490:p3",
+        "005755:p6",
+        "005267:p5"
+      ],
+      "packed_pages": [
+        "002081:p3",
+        "002313:p3",
+        "002490:p3",
+        "004691:p6",
+        "005267:p5",
+        "005614:p6",
+        "005755:p6",
+        "005863:p4"
+      ]
+    },
+    {
+      "id": "C02",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 0.5,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0481,
+      "ranked_pages": [
+        "003726:p3",
+        "003726:p8",
+        "003726:p1",
+        "003726:p4",
+        "003726:p2",
+        "003726:p7",
+        "003726:p6",
+        "003726:p5"
+      ],
+      "packed_pages": [
+        "003726:p1",
+        "003726:p2",
+        "003726:p3",
+        "003726:p4",
+        "003726:p5",
+        "003726:p6",
+        "003726:p7",
+        "003726:p8"
+      ]
+    },
+    {
+      "id": "C03",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.049,
+      "ranked_pages": [
+        "006313:p5",
+        "006313:p2",
+        "006313:p4",
+        "006313:p6",
+        "006313:p8",
+        "006313:p1",
+        "006313:p7",
+        "006313:p3"
+      ],
+      "packed_pages": [
+        "006313:p1",
+        "006313:p2",
+        "006313:p3",
+        "006313:p4",
+        "006313:p5",
+        "006313:p6",
+        "006313:p7",
+        "006313:p8"
+      ]
+    },
+    {
+      "id": "C04",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0471,
+      "ranked_pages": [
+        "005927:p1",
+        "005927:p5",
+        "005927:p2",
+        "005927:p8",
+        "005927:p4",
+        "005927:p6",
+        "005927:p3",
+        "005927:p9"
+      ],
+      "packed_pages": [
+        "005927:p1",
+        "005927:p2",
+        "005927:p3",
+        "005927:p4",
+        "005927:p5",
+        "005927:p6",
+        "005927:p8",
+        "005927:p9"
+      ]
+    },
+    {
+      "id": "C05",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": false,
+      "known_page_recall_at_8": 0.0,
+      "reciprocal_rank_at_8": 0,
+      "packed_reference_coverage": 0.0,
+      "seconds": 0.0496,
+      "ranked_pages": [
+        "005119:p11",
+        "006327:p6",
+        "003876:p13",
+        "003876:p8",
+        "005407:p5",
+        "005407:p1",
+        "005119:p13",
+        "006327:p9"
+      ],
+      "packed_pages": [
+        "003876:p13",
+        "003876:p8",
+        "005119:p11",
+        "005119:p13",
+        "005407:p1",
+        "005407:p5",
+        "006327:p6",
+        "006327:p9"
+      ]
+    },
+    {
+      "id": "C06",
+      "group": "no brand name",
+      "method": "hybrid",
+      "actual_method": "hybrid",
+      "known_page_hit_at_5": true,
+      "known_page_recall_at_8": 1.0,
+      "reciprocal_rank_at_8": 1.0,
+      "packed_reference_coverage": 1.0,
+      "seconds": 0.0501,
+      "ranked_pages": [
+        "005755:p5",
+        "005755:p2",
+        "005755:p3",
+        "005755:p7",
+        "005755:p4",
+        "005755:p1",
+        "005755:p8",
+        "005755:p6"
+      ],
+      "packed_pages": [
+        "005755:p1",
+        "005755:p2",
+        "005755:p3",
+        "005755:p4",
+        "005755:p5",
+        "005755:p6",
+        "005755:p7",
+        "005755:p8"
+      ]
+    }
+  ],
+  "limitations": [
+    "Reference pages selected by the same assistant implementing the system.",
+    "Development/regression evaluation, not blinded.",
+    "Known-page hits are not precision or answer factual accuracy.",
+    "Named products are filtered consistently before all three retrieval methods.",
+    "Packed coverage includes structured-field routing; raw rank metrics exclude it.",
+    "Latency includes model cold start; not a controlled server benchmark."
+  ]
+}

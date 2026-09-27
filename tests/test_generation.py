@@ -55,4 +55,21 @@ class GenerationTests(unittest.TestCase):
         with patch.object(g,'urlopen',return_value=response):
             self.assertEqual(g.provider_answer(pack,'test-key','session')['citations'],sorted([first,second]))
 
+    def test_missing_extraction_record_has_its_own_citation(self):
+        pack=g.evidence_pack(retrieval.query('What is the pKa of Palsonify?',method='bm25'),load_json('products.json'))
+        record=next(r for r in pack['derived_records'] if r.get('field')=='pka')
+        self.assertEqual(record['id'],'006636:f5')
+        self.assertEqual(record['status'],'not_reported')
+        self.assertEqual(record['source_ids'],[])
+
+    def test_valid_derived_citation_and_invalid_group(self):
+        pack=self.pack();ident=pack['derived_records'][0]['id']
+        for citation,valid in [(ident,True),(ident+', 999999:f1',False)]:
+            response=unittest.mock.MagicMock()
+            response.__enter__.return_value.read.return_value=json.dumps({'choices':[{'message':{'content':'Saved record ['+citation+']'},'finish_reason':'stop'}]}).encode()
+            with patch.object(g,'urlopen',return_value=response):
+                if valid:self.assertEqual(g.provider_answer(pack,'test-key','session')['citations'],[ident])
+                else:
+                    with self.assertRaises(g.AnswerError):g.provider_answer(pack,'test-key','session')
+
 if __name__=='__main__':unittest.main()

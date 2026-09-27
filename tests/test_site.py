@@ -164,4 +164,23 @@ class UITests(unittest.TestCase):
         for phrase in ['14 products added','What changed from','Original extraction label','Working classification','### English presentation']:
             self.assertNotIn(phrase,text)
 
+    def test_structured_question_and_missing_value_ui(self):
+        from unittest.mock import patch
+        import generation
+        self.route('CMC evidence search')
+        def ask(question):
+            next(x for x in self.a.text_input if x.label=='Ask about an oral formulation').set_value(question)
+            self.button('Ask EPAR').click().run();self.good()
+        with patch.object(generation,'provider_answer') as provider:
+            ask('How many products are salts?')
+            self.assertEqual([m.value for m in self.a.metric],['146','351','18'])
+            self.assertEqual(len(self.a.dataframe[0].value),146)
+            ask('What is the pKa of Palsonify?')
+            self.assertTrue(any('not reported' in x.value for x in self.a.markdown))
+            self.assertEqual(len(self.a.metric),0)
+            ask('How many salt drugs were FDA approved?')
+            self.assertTrue(any('cannot safely apply' in x.value for x in self.a.warning))
+            self.assertEqual(len(self.a.metric),0)
+            provider.assert_not_called()
+
 if __name__=='__main__':unittest.main(verbosity=2)
