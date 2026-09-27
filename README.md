@@ -15,7 +15,8 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
 - CMC evidence search: complete structured queries plus hybrid source retrieval.
   BM25 and local BGE-small vectors are fused by reciprocal rank (k=60), with product/property routing.
   AI answer uses GLM-5.3-Flash through OpenCode Go to understand the question and select
-  a validated database query or RAG operation. It handles clear typos and pasted numbering.
+  a validated database query or RAG operation from tool descriptions, without example questions
+  or hand-written intent and correction rules.
   Counts and property lookups use one routing call; code computes results. RAG explanations
   use a second, evidence-grounded generation call. Repeated identical calls can use the cache.
 - Literature comparison: 259 FDA-overlap products, 27 ASD agreements, 5 potential

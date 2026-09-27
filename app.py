@@ -229,7 +229,7 @@ def ai_answer_view():
             st.session_state.pop(name,None)
         if not question.strip():st.warning('Please enter a question.');return
         session=st.session_state.setdefault('rag_session',str(uuid.uuid4()))
-        service=answer_service(generation.SYSTEM+router.SYSTEM)
+        service=answer_service(generation.SYSTEM+router.contract_signature())
         try:
             with st.spinner('Understanding your question…'):
                 routed=service.route(question,products,None if product=='Automatic' else product,key,session)
@@ -441,7 +441,7 @@ The 39 ASD assessments include interpretations of the manufacturing record; they
 ### Evidence search and RAG
 Questions take two routes. Complete counts and lists use supported structured filters over the full selected cohort, with a visible denominator and unresolved records. CMC explanations use product/property matching and hybrid retrieval: SQLite BM25 plus a local BGE-small English embedding model, fused by reciprocal rank (k=60). Embeddings run on the server CPU without an embedding API.
 
-The **AI answer** mode first uses **GLM-5.3-Flash via OpenCode Go** to understand the question, correct clear typos and choose a database operation or CMC retrieval. The selected operation is validated before execution. Counts and property lookups are computed from saved records; they use the routing call but no answer-generation call. CMC explanations use a second model call with the retrieved evidence. Page citations refer to CMC crops; extraction/review citations are identified separately. Citation checks do not independently establish scientific correctness.
+The **AI answer** mode uses **GLM-5.3-Flash via OpenCode Go** to choose a database operation or CMC retrieval from the available tool descriptions. No example questions or hand-written intent and correction rules are supplied. The selected operation is validated before execution. Counts and property lookups are computed from saved records; they use the routing call but no answer-generation call. CMC explanations use a second model call with the retrieved evidence. Page citations refer to CMC crops; extraction/review citations are identified separately. Citation checks do not independently establish scientific correctness.
 
 The earlier 24 regression questions and 4 stress cases are retained. A separate 20-question development comparison uses the same corpus for BM25, dense and hybrid retrieval. Known-reference-page recall at 8 was 90%, 90% and 95%; hit rate at 5 was 90%, 85% and 85%. These are retrieval metrics against selected reference pages, not answer accuracy or a blinded comparison with the old Gemini system. Independent scientific review remains necessary.
 

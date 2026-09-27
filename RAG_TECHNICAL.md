@@ -4,8 +4,9 @@ Snapshot: 20 September 2026. Engineering update: 26 September 2026.
 
 ## Two question paths
 
-GLM-5.3-Flash first interprets the user's question and returns a JSON decision: database,
-RAG, or clarification. It can normalize spelling, stray list numbers and mixed-language phrasing.
+GLM-5.3-Flash selects an operation from the available tool descriptions and returns a JSON
+decision: database, RAG, or clarification. The request supplies data scope, fields and parameter
+contracts, without example questions, typo instructions or hand-written question-to-route rules.
 The UI shows the normalized question and corrections. A deterministic validator checks routes,
 operators, enum values, field names, canonical products, date types and bounds. No model-produced
 SQL or Python is executed. Unknown filters and unresolved substantive conditions cannot be
@@ -125,12 +126,20 @@ Engineering tests cover deterministic counting after a mocked routing call, nega
 salt/hydrate distinctions, compound scope, missing pKa, missing documents, comparison context,
 citations, English presentation and Streamlit interactions. Provider responses are mocked.
 
-The model-routing update passed 49 offline tests and ten live routing regression cases
-(see `evaluation/routing_results.json`). Cases include the exact accidental trailing `2.`,
-misspellings, mixed Chinese/English, a misspelt product, complete counts, a comparison,
-genuine BCS/date numbers, and unsupported FDA/numeric-threshold conditions. All ten selected
-the expected route and tested parameters in this run. This is a small development set,
-not an independent accuracy estimate; routing and answer quality remain separate measures.
+The earlier model-routing update passed ten live development cases, retained in
+`evaluation/routing_results.json` as historical results. That prompt explicitly included the
+accidental trailing-number question and the date-boundary example. Their success was a
+targeted regression check, not evidence of generalization to unseen wording.
+
+The current tool-description-only version removes those examples and all hand-written intent
+and correction rules. Six different developer-selected questions passed their expected routing
+and parameter checks (`evaluation/routing_general_results.json`). They cover informal wording,
+an enumerated percentage question, a field lookup, evidence explanation, date-filtered counts
+and an unsupported numeric threshold. The prompt/tool-contract hash and expected results were
+saved before any responses; no examples were added or prompts tuned after this run. These six
+checks are still a small development set, not independent accuracy validation or an evaluation
+of generated scientific answers. Fifty offline tests cover execution, UI and parameter checks
+with mocked provider responses, including cache invalidation when tool contracts change.
 
 ### Live example follow-up
 
@@ -167,8 +176,8 @@ claim review remains necessary; this prompt change is not an entailment verifier
 “I built a CMC research assistant with two paths: deterministic analysis of structured records
 for complete cohort questions, and retrieval-augmented explanations for source-based questions.
 An LLM understands the question and proposes the route and typed parameters; deterministic code
-validates and executes the plan. This lets users make harmless typos without making the model
-responsible for arithmetic or giving it arbitrary database access.
+validates and executes the plan. Tool descriptions define available capabilities; the model
+selects an operation without a hand-written intent classifier. Code computes the totals.
 The retrieval combines BM25 with local dense embeddings using reciprocal rank fusion, plus
 drug-specific routing and source-linked fields. Answers preserve reported facts versus review
 inferences and expose their source pages. I evaluated retrieval methods on the same corpus;

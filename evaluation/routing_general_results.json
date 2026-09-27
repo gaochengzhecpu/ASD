@@ -1,0 +1,331 @@
+{
+  "prompt_sha256": "281dd7af9ce1638a634d872fbac73723f12e55516a0fb7d57560b660a52d22e5",
+  "model": "glm-5.3-flash",
+  "scope": "Six developer-selected routing checks. Questions are absent from the frozen prompt. No prompt changes or automatic retries after observing results; not independent validation.",
+  "expected_checks": [
+    {
+      "id": "informal_salt",
+      "question": "Could u count the oral meds whose API is in a salt form?? thx",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "salt": "Salt"
+        }
+      }
+    },
+    {
+      "id": "numbered_percentage",
+      "question": "1) whats the share of products classified as ASD",
+      "expected": {
+        "route": "database",
+        "operation": "percentage",
+        "filters": {
+          "asd": "ASD"
+        }
+      }
+    },
+    {
+      "id": "stored_property",
+      "question": "which carrier is listed for Kalydeco?",
+      "expected": {
+        "route": "database",
+        "operation": "lookup",
+        "product_names": [
+          "Kalydeco"
+        ],
+        "fields": [
+          "asd_carrier"
+        ]
+      }
+    },
+    {
+      "id": "evidence_explanation",
+      "question": "Explain how Zelboraf is manufactured from its co-precipitate.",
+      "expected": {
+        "route": "rag",
+        "operation": "explain",
+        "product_names": [
+          "Zelboraf"
+        ]
+      }
+    },
+    {
+      "id": "bounded_cohort",
+      "question": "Count capsules authorised from 2018 through 2021.",
+      "expected": {
+        "route": "database",
+        "operation": "count",
+        "filters": {
+          "form": "Capsule"
+        },
+        "start": "2018-01-01",
+        "end": "2021-12-31"
+      }
+    },
+    {
+      "id": "unsupported_real_number",
+      "question": "How many medicines have a pKa less than 4.5?",
+      "expected": {
+        "route": "clarify"
+      }
+    }
+  ],
+  "records": [
+    {
+      "id": "informal_salt",
+      "question": "Could u count the oral meds whose API is in a salt form?? thx",
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many oral medicinal products have an API in a salt form?",
+        "filters": {
+          "salt": "Salt"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8334,
+        "completion_tokens": 71,
+        "total_tokens": 8405,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 5,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "matches": 146,
+      "denominator": 351,
+      "elapsed_seconds": 1.86
+    },
+    {
+      "id": "numbered_percentage",
+      "question": "1) whats the share of products classified as ASD",
+      "decision": {
+        "route": "database",
+        "operation": "percentage",
+        "normalized_question": "What is the share of products classified as ASD in the cohort?",
+        "filters": {
+          "asd": "ASD"
+        },
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8328,
+        "completion_tokens": 76,
+        "total_tokens": 8404,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 11,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "matches": 39,
+      "denominator": 351,
+      "elapsed_seconds": 2.14
+    },
+    {
+      "id": "stored_property",
+      "question": "which carrier is listed for Kalydeco?",
+      "decision": {
+        "route": "database",
+        "operation": "lookup",
+        "normalized_question": "Which carrier is listed for Kalydeco?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [
+          "Kalydeco"
+        ],
+        "fields": [
+          "asd_carrier"
+        ],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8327,
+        "completion_tokens": 79,
+        "total_tokens": 8406,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 13,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "direct",
+      "answer": "**Kalydeco — ASD carrier / polymer:** HPMCAS (Reported) [002494:r1].",
+      "elapsed_seconds": 1.49
+    },
+    {
+      "id": "evidence_explanation",
+      "question": "Explain how Zelboraf is manufactured from its co-precipitate.",
+      "decision": {
+        "route": "rag",
+        "operation": "explain",
+        "normalized_question": "Explain how Zelboraf (vemurafenib) is manufactured from its co-precipitate.",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [
+          "Zelboraf"
+        ],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8334,
+        "completion_tokens": 77,
+        "total_tokens": 8411,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "evidence",
+      "source_ids": [
+        "002409:p3",
+        "002409:p1"
+      ],
+      "elapsed_seconds": 3.17
+    },
+    {
+      "id": "bounded_cohort",
+      "question": "Count capsules authorised from 2018 through 2021.",
+      "decision": {
+        "route": "database",
+        "operation": "count",
+        "normalized_question": "How many capsule products were authorised from 2018 through 2021?",
+        "filters": {
+          "form": "Capsule"
+        },
+        "start": "2018-01-01",
+        "end": "2021-12-31",
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [],
+        "clarification": ""
+      },
+      "usage": {
+        "prompt_tokens": 8329,
+        "completion_tokens": 116,
+        "total_tokens": 8445,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 39,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "catalogue",
+      "matches": 21,
+      "denominator": 88,
+      "elapsed_seconds": 4.26
+    },
+    {
+      "id": "unsupported_real_number",
+      "question": "How many medicines have a pKa less than 4.5?",
+      "decision": {
+        "route": "clarify",
+        "operation": "count",
+        "normalized_question": "How many medicines have a pKa less than 4.5?",
+        "filters": {},
+        "start": null,
+        "end": null,
+        "reported_only": false,
+        "product_names": [],
+        "fields": [],
+        "corrections": [],
+        "unsupported_conditions": [
+          "pka numeric threshold (< 4.5)"
+        ],
+        "clarification": "Counting medicines by a numeric pKa threshold (pKa < 4.5) is not supported. The database can only filter on whether a pKa value is reported. I can count how many products have a reported pKa, or list pKa values for specific products so you can apply the threshold yourself."
+      },
+      "usage": {
+        "prompt_tokens": 8331,
+        "completion_tokens": 156,
+        "total_tokens": 8487,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 18,
+          "rejected_prediction_tokens": 0
+        }
+      },
+      "passed": true,
+      "mismatches": [],
+      "result_kind": "clarification",
+      "elapsed_seconds": 2.97
+    }
+  ],
+  "passed": 6,
+  "total": 6
+}

@@ -125,5 +125,14 @@ class RouterTests(unittest.TestCase):
             service.answer(pack,'test-key','s',routed=True)
             self.assertEqual(len(service.calls),2);self.assertEqual(plan.call_count,1);self.assertEqual(answer.call_count,1)
 
+    def test_changed_tool_contract_does_not_reuse_old_route(self):
+        service=generation.AnswerService()
+        with patch.object(router,'provider_route',return_value={'decision':decision(),'cached':False}) as send:
+            service.route('Count salts',self.products,None,'test-key','s1')
+            self.assertTrue(service.route('Count salts',self.products,None,'test-key','s2')['cached'])
+            with patch.object(router,'TOOLS',[*router.TOOLS,{'description':'Changed tool availability'}]):
+                self.assertFalse(service.route('Count salts',self.products,None,'test-key','s3')['cached'])
+            self.assertEqual(send.call_count,2)
+
 
 if __name__=='__main__':unittest.main()

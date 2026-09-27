@@ -155,7 +155,7 @@ class AnswerService:
         import router
         if not api_key:raise AnswerError('AI routing is not configured. Please use Question search or Complete catalog.')
         if not question.strip() or len(question)>1500:raise AnswerError('Please enter a question of 1–1,500 characters.')
-        fingerprint=sha256(('route'+api_key+MODEL+router.SYSTEM+question+str(product)+json.dumps(router.product_index(products),sort_keys=True)).encode()).hexdigest()
+        fingerprint=sha256(('route'+api_key+MODEL+router.contract_signature()+question+str(product)+json.dumps(router.product_index(products),sort_keys=True)).encode()).hexdigest()
         return self._request(fingerprint,session_id,lambda:router.provider_route(question,products,product,api_key,session_id),2)
 
     def answer(self,pack,api_key,session_id,*,routed=False):
