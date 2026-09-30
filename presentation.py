@@ -13,7 +13,9 @@ ENTITY_NAMES = {
     'alpelisib 袋装颗粒': 'alpelisib granules in sachets',
     'alpelisib（两种口服DP共用DS）': 'alpelisib (DS shared by both oral formulations)',
 }
-OMISSIONS = ['Votubia', 'Gavreto', 'Tavneos', 'Zokinvy', 'Vanflyta']
+OMISSIONS = ['Votubia', 'Gavreto', 'Zokinvy', 'Vanflyta']
+# Review reclassifications of the saved working label; the original records remain unchanged.
+RECLASSIFIED = {'Tavneos': 'Non-ASD'}
 MISMATCHES = ['Xtandi', 'Lynparza']
 STATUS = {'reported':'Reported', 'partly_reported':'Partly reported',
           'interpretation':'Interpretation', 'not_reported':'Not reported',
@@ -45,7 +47,7 @@ REASONS = {
  'Delstrigo': 'Doravirine and HPMCAS are spray-dried from a common solution, supporting ASD as an interpretation. Lamivudine and tenofovir disoproxil are not assigned ASD.',
  'Ojemda': 'An excipient-containing extruded intermediate converts crystalline tovorafenib to amorphous material. ASD is the review interpretation for both oral forms; the carrier role and melting step are not directly disclosed.',
  'Gavreto': 'The CMC record explicitly describes an amorphous dried dispersion and spray drying. Crystalline input DS does not contradict the final dispersion.',
- 'Tavneos': 'The capsule contains a solid solution with avacopan in amorphous form. This supports ASD; the disclosed melt-fill process is not extrusion.',
+ 'Tavneos': 'Reclassified as non-ASD. The EPAR describes avacopan in amorphous form as a solid solution in the capsule, made by dissolving it in molten excipients (PEG 4000 / macrogolglycerol hydroxystearate), filling and solidifying. This is a melt-filled amorphous solution in a capsule, not an ASD intermediate: amorphous is not the same as ASD. The earlier working label (ASD) is kept in the original record.',
  'Zokinvy': 'The CMC record explicitly describes an amorphous solid dispersion of lonafarnib stabilised in a povidone matrix.',
  'Vanflyta': 'The CMC record explicitly describes an amorphous solid dispersion with hydroxypropyl-beta-cyclodextrin.',
 }
@@ -213,6 +215,7 @@ def entity_name(value):
 
 def assessment(p):
     if p['product']=='Evotaz':return 'Insufficient evidence'
+    if p['product'] in RECLASSIFIED:return RECLASSIFIED[p['product']]
     return {'ASD':'ASD','Likely ASD':'ASD','Non-ASD':'Non-ASD',
             'Likely non-ASD':'Non-ASD','Inorganic adsorbate':'Non-ASD',
             'Unresolved':'Insufficient evidence','Source unavailable':'Insufficient evidence'}[p['working_label']]
@@ -296,6 +299,7 @@ def comparison_rows(products,benchmark):
         elif listed and decision=='ASD':category='ASD in both'
         elif not listed and decision=='ASD':category='Potential literature omission'
         elif decision=='Insufficient evidence':category='CMC evidence unresolved'
+        elif p['product'] in RECLASSIFIED:category='Not listed; reclassified non-ASD'
         elif listed:category='Paper ASD; review non-ASD'
         else:category='Not listed; review non-ASD'
         rows.append({'Product':p['product'],'Paper ASD list':'Listed' if listed else 'Not listed',

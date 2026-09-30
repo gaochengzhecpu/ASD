@@ -8,7 +8,7 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
 
 ## Pages
 
-- ASD formulations: 39 review assessments, with dosage form, strength, carrier,
+- ASD formulations: 38 review assessments, with dosage form, strength, carrier,
   process, excipients and distinct drug-loading denominators.
 - Oral product database: one ASD / Non-ASD / Insufficient evidence assessment, product
   details, source pages and English CSV exports.
@@ -19,7 +19,7 @@ images. Generics, hybrids and biosimilars are excluded; this is not an NME count
   or hand-written intent and correction rules.
   Counts and property lookups use one routing call; code computes results. RAG explanations
   use a second, evidence-grounded generation call. Repeated identical calls can use the cache.
-- Literature comparison: 259 FDA-overlap products, 27 ASD agreements, 5 potential
+- Literature comparison: 259 FDA-overlap products, 27 ASD agreements, 4 potential
   literature omissions and 2 formulation mismatches.
 - About: scope, limitations, acknowledgements and version history.
 
@@ -36,7 +36,9 @@ is shown as Source wording. These are excerpts, not asserted translations, and
 can be less complete than the original narrative. Original component-level ASD
 fields remain archived; the page presents one consolidated product assessment.
 
-Not listed in the paper does not establish non-ASD. The five possible omissions
+Not listed in the paper does not establish non-ASD. Tavneos (amorphous avacopan melt-filled
+as a solution in a capsule) is reclassified as non-ASD; its original working label is kept.
+The four possible omissions
 remain reference disagreements, not automatically corrected ground-truth labels.
 First authorisation year does not date every subsequent formulation change.
 The website is not a clinical dosing resource.

@@ -409,8 +409,8 @@ def literature_view():
 The paper lists ASD formulations. **Not listed does not prove non-ASD.** Unlisted products were initially treated as negative to compare screening methods; the review below separates possible reference omissions and different formulations.''')
     rows=comparison_rows(products,benchmark);frame=pd.DataFrame(rows);counts=Counter(r['Comparison'] for r in rows)
     for col,label,n in zip(st.columns(3),['ASD in both','Potential literature omissions','Different formulations'],[counts['ASD in both'],counts['Potential literature omission'],counts['Different formulation reviewed']]):col.metric(label,n)
-    st.caption(f"29 EMA product/formulation matches to the paper ASD list: 27 agree with our review; 2 involve different formulations. Of 230 unlisted products, 5 are assessed as ASD, {counts['Not listed; review non-ASD']} as non-ASD and {counts['CMC evidence unresolved']} remain unresolved. Vaxchora and Palforzia are included in the overlap but are outside the paper’s NDA scope.")
-    st.subheader('Five potential literature omissions')
+    st.caption(f"29 EMA product/formulation matches to the paper ASD list: 27 agree with our review; 2 involve different formulations. Of 230 unlisted products, {counts['Potential literature omission']} are assessed as ASD, {counts['Not listed; review non-ASD']+counts['Not listed; reclassified non-ASD']} as non-ASD and {counts['CMC evidence unresolved']} remain unresolved. Vaxchora and Palforzia are included in the overlap but are outside the paper’s NDA scope.")
+    st.subheader('Four potential literature omissions')
     st.write('ASD in the saved CMC evidence, but absent from the paper-mapped list. Literature-scope checking is still needed before calling these confirmed omissions.')
     evidence=[]
     for name in OMISSIONS:
@@ -418,6 +418,7 @@ The paper lists ASD formulations. **Not listed does not prove non-ASD.** Unliste
         evidence.append({'Product':name,'Our assessment':'ASD','Paper ASD list':'Not listed','CMC evidence':' / '.join(quotes),'Basis':basis(p)})
     table(evidence)
     st.caption('Against the uncorrected paper labels these appear as our method’s false positives (FP). If independently verified as omissions, they are reference-label errors, not method false positives.')
+    st.info('Tavneos was previously listed here as a fifth potential omission. Its avacopan is amorphous, but the capsule is melt-filled with a solution of the drug in molten PEG 4000 / macrogolglycerol hydroxystearate, not an ASD. It is now assessed as non-ASD, so the paper not listing it is consistent with our review. Amorphous is not the same as ASD.')
     st.subheader('Two formulation mismatches')
     table([{'Product':'Xtandi','Reviewed CMC formulation':'Liquid-filled soft capsule','Paper-mapped ASD formulation':'Later tablet'},
            {'Product':'Lynparza','Reviewed CMC formulation':'Crystalline solid-dispersion capsule','Paper-mapped ASD formulation':'Later tablet'}])
@@ -442,7 +443,7 @@ EMA medicines records and Article 57 route information define the selected oral 
 
 The site consolidates the completed Codex review into one product assessment: **ASD**, **Non-ASD** or **Insufficient evidence**. ASD covers a drug dispersed in an organic carrier matrix in amorphous form, including solid solutions and cyclodextrin-based dispersions. Amorphous silica adsorbates are outside this category. A pure amorphous API or a polymer excipient alone is not sufficient.
 
-The 39 ASD assessments include interpretations of the manufacturing record; they are not 39 independently confirmed experimental findings. Carrier assignments are marked **Reported** or **Inferred**, with their supporting CMC excerpts. Process details and quantitative drug loading are retained only where the record supports them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
+The 38 ASD assessments include interpretations of the manufacturing record; they are not 38 independently confirmed experimental findings. Carrier assignments are marked **Reported** or **Inferred**, with their supporting CMC excerpts. Process details and quantitative drug loading are retained only where the record supports them. Combination products can contain both ASD and non-ASD components. Approval year refers to the first product authorisation, not every formulation change.
 
 ### Evidence search and RAG
 Questions take two routes. Complete counts and lists use supported structured filters over the full selected cohort, with a visible denominator and unresolved records. CMC explanations use product/property matching and hybrid retrieval: SQLite BM25 plus a local BGE-small English embedding model, fused by reciprocal rank (k=60). Embeddings run on the server CPU without an embedding API.

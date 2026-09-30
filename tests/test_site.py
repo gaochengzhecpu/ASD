@@ -90,10 +90,12 @@ class PresentationTests(unittest.TestCase):
                 self.assertIsNone(CJK.search(value),p['product'])
                 if origin=='Source wording':
                     self.assertTrue(all(e['quote'].strip() in value for e in f['evidence'] if e['quote'].strip()))
-        self.assertEqual(Counter(assessment(p) for p in ps),{'ASD':39,'Non-ASD':303,'Insufficient evidence':9})
+        self.assertEqual(Counter(assessment(p) for p in ps),{'ASD':38,'Non-ASD':304,'Insufficient evidence':9})
         self.assertEqual(assessment(next(p for p in ps if p['product']=='Evotaz')),'Insufficient evidence')
+        tavneos=next(p for p in ps if p['product']=='Tavneos')
+        self.assertEqual((tavneos['working_label'],assessment(tavneos)),('ASD','Non-ASD'))
         rows=[formulation_row(p) for p in ps if assessment(p)=='ASD']
-        self.assertEqual(len(rows),39);self.assertIsNone(CJK.search(str(rows)))
+        self.assertEqual(len(rows),38);self.assertIsNone(CJK.search(str(rows)))
         self.assertTrue(all('DP manufacturing' in r and 'Excipients' in r for r in rows))
     def test_carrier_interpretations_preserve_source_uncertainty(self):
         ps={p['product']:p for p in load_json('products.json')}
@@ -113,7 +115,7 @@ class PresentationTests(unittest.TestCase):
     def test_reference_disagreements_are_not_silently_relabelled(self):
         rows=comparison_rows(load_json('products.json'),load_json('benchmark.json'))
         counts=Counter(r['Comparison'] for r in rows)
-        self.assertEqual(counts,{'ASD in both':27,'Potential literature omission':5,
+        self.assertEqual(counts,{'ASD in both':27,'Potential literature omission':4,'Not listed; reclassified non-ASD':1,
             'Different formulation reviewed':2,'CMC evidence unresolved':6,'Not listed; review non-ASD':219})
         self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Potential literature omission'},set(OMISSIONS))
         self.assertEqual({r['Product'] for r in rows if r['Comparison']=='Different formulation reviewed'},{'Xtandi','Lynparza'})
@@ -156,10 +158,11 @@ class UITests(unittest.TestCase):
         self.assertTrue(any('not a live' in x.value for x in self.a.info))
     def test_benchmark_and_navigation(self):
         self.route('Literature comparison')
-        self.assertEqual([m.value for m in self.a.metric],['27','5','2'])
-        self.assertEqual(len(self.a.dataframe[0].value),5)
-        self.route('ASD formulations');self.assertEqual([m.value for m in self.a.metric],['39','351','350'])
-        self.assertEqual(len(self.a.dataframe[0].value),39)
+        self.assertEqual([m.value for m in self.a.metric],['27','4','2'])
+        self.assertEqual(len(self.a.dataframe[0].value),4)
+        self.assertTrue(any('Tavneos' in x.value for x in self.a.info))
+        self.route('ASD formulations');self.assertEqual([m.value for m in self.a.metric],['38','351','350'])
+        self.assertEqual(len(self.a.dataframe[0].value),38)
         self.select('Show').set_value('Manufacturing & excipients').run();self.good()
         self.assertIn('DP manufacturing',self.a.dataframe[0].value.columns)
         self.route('About')
