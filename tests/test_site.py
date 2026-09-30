@@ -142,6 +142,7 @@ class UITests(unittest.TestCase):
         self.assertEqual(len(frame),351)
         for label in ['Acid / base character','pKa','Salt / counterion','Reported BCS class','DP excipients','API fraction in whole DP']:
             self.assertIn(label,frame.columns)
+        for label in ['Chemical name','Molecular formula','Molecular weight']:self.assertNotIn(label,frame.columns)
         self.select('Show').set_value('Drug substance').run();self.good()
         self.assertIn('pKa',self.a.dataframe[0].value.columns);self.assertNotIn('DP excipients',self.a.dataframe[0].value.columns)
         self.a.text_input(key='db_search').set_value('hydrochloride').run();self.good()

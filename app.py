@@ -75,7 +75,8 @@ def dataset():return load_json('products.json'),load_json('benchmark.json')
 products,benchmark=dataset()
 by_name={p['product']:p for p in products};by_id={p['id']:p for p in products}
 summary=pd.DataFrame([product_row(p) for p in products])
-EXTRACTED=[k for k in FIELD_LABELS if k!='asd']
+# Identity fields stay in product profiles and exports, not the wide table.
+EXTRACTED=[k for k in FIELD_LABELS if k not in ('asd','chemical_name','molecular_formula','molecular_weight')]
 database=pd.concat([summary,pd.DataFrame([{FIELD_LABELS[k]:field_text(p,k) for k in EXTRACTED} for p in products])],axis=1)
 asd_products=[p for p in products if assessment(p)=='ASD']
 asd_table=pd.DataFrame([formulation_row(p) for p in asd_products])
@@ -190,7 +191,7 @@ def all_medicines():
     a,b,c=st.columns([2,1,1]);term=a.text_input('Search product, ingredient, company or any shown property',key='db_search',placeholder='Try HPMCAS, weak base, hydrochloride…')
     status=b.selectbox('ASD assessment',['All','ASD','Non-ASD','Insufficient evidence'],key='db_status')
     view=c.selectbox('Show',['All extracted fields','Drug substance','Drug product','ASD & loading','Overview'],key='db_view')
-    keys={'All extracted fields':EXTRACTED,'Overview':[]}.get(view) or [k for k in GROUPS.get(view,[]) if k!='asd']
+    keys={'All extracted fields':EXTRACTED,'Overview':[]}.get(view) or [k for k in GROUPS.get(view,[]) if k in EXTRACTED]
     cols=list(summary.columns)+[FIELD_LABELS[k] for k in keys]
     subset=database[cols]
     if term:subset=subset[subset.astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)]
