@@ -134,6 +134,16 @@ class UITests(unittest.TestCase):
         self.select('Inspect a product').set_value('Jinarc').run();self.good()
         self.assertTrue(any('ASD assessment: ASD' in x.value for x in self.a.markdown))
         self.select('Inspect a product').set_value('Kygevvi').run();self.good()
+    def test_database_lists_all_extracted_fields(self):
+        self.route('Oral product database')
+        frame=self.a.dataframe[0].value
+        self.assertEqual(len(frame),351)
+        for label in ['Acid / base character','pKa','Salt / counterion','Reported BCS class','DP excipients','API fraction in whole DP']:
+            self.assertIn(label,frame.columns)
+        self.select('Show').set_value('Drug substance').run();self.good()
+        self.assertIn('pKa',self.a.dataframe[0].value.columns);self.assertNotIn('DP excipients',self.a.dataframe[0].value.columns)
+        self.a.text_input(key='db_search').set_value('hydrochloride').run();self.good()
+        self.assertTrue(0<len(self.a.dataframe[0].value)<351)
     def test_search_catalog_examples(self):
         self.route('CMC evidence search');self.a.radio(key='search_mode').set_value('Question search').run();self.button('Find evidence').click().run();self.good()
         self.assertTrue(any('Retrieved evidence' in h.value for h in self.a.subheader))

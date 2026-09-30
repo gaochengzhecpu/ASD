@@ -75,6 +75,8 @@ def dataset():return load_json('products.json'),load_json('benchmark.json')
 products,benchmark=dataset()
 by_name={p['product']:p for p in products};by_id={p['id']:p for p in products}
 summary=pd.DataFrame([product_row(p) for p in products])
+EXTRACTED=[k for k in FIELD_LABELS if k!='asd']
+database=pd.concat([summary,pd.DataFrame([{FIELD_LABELS[k]:field_text(p,k) for k in EXTRACTED} for p in products])],axis=1)
 asd_products=[p for p in products if assessment(p)=='ASD']
 asd_table=pd.DataFrame([formulation_row(p) for p in asd_products])
 
@@ -185,13 +187,17 @@ def asd_view():
 
 def all_medicines():
     page_intro('Product library','Oral product database','Explore the 351 oral products in this study, with structured drug-substance and drug-product properties.')
-    a,b=st.columns([2,1]);term=a.text_input('Search product, ingredient or company',key='db_search')
+    a,b,c=st.columns([2,1,1]);term=a.text_input('Search product, ingredient, company or any shown property',key='db_search',placeholder='Try HPMCAS, weak base, hydrochloride…')
     status=b.selectbox('ASD assessment',['All','ASD','Non-ASD','Insufficient evidence'],key='db_status')
-    subset=summary.copy()
-    if term:subset=subset[subset[['Product','Active ingredient','Company']].astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)]
+    view=c.selectbox('Show',['All extracted fields','Drug substance','Drug product','ASD & loading','Overview'],key='db_view')
+    keys={'All extracted fields':EXTRACTED,'Overview':[]}.get(view) or [k for k in GROUPS.get(view,[]) if k!='asd']
+    cols=list(summary.columns)+[FIELD_LABELS[k] for k in keys]
+    subset=database[cols]
+    if term:subset=subset[subset.astype(str).apply(lambda s:s.str.contains(term,case=False,regex=False)).any(axis=1)]
     if status!='All':subset=subset[subset['ASD assessment']==status]
-    st.caption(f'{len(subset)} of {len(products)} products');table(subset,height=350)
-    csv_button('Download product assessments',subset,'EMA_product_assessments.csv','all_summary')
+    st.caption(f'{len(subset)} of {len(products)} products · {len(keys)} extracted properties shown · scroll sideways for more columns; values labelled in each product profile as Reported, Partly reported or Interpretation.')
+    table(subset,height=420,column_config={'Product':st.column_config.TextColumn(pinned=True),**{FIELD_LABELS[k]:st.column_config.TextColumn(width='medium') for k in keys}})
+    csv_button('Download shown columns',subset,'EMA_oral_products.csv','all_summary')
     chosen=[by_name[n] for n in subset['Product']]
     with st.expander('Export structured CMC data'):
         group=st.selectbox('Properties',['All properties','Drug substance','Drug product','ASD & loading'],key='export_group')
